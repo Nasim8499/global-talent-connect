@@ -110,7 +110,7 @@ export default function WorkerDetail() {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Personal Info</h3>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { icon: Passport, label: 'Passport', value: worker.passport },
+                  { icon: Hash, label: 'Passport', value: worker.passport },
                   { icon: Flag, label: 'Nationality', value: worker.nationality },
                   { icon: Phone, label: 'Phone', value: worker.phone || 'N/A' },
                   { icon: Calendar, label: 'Registered', value: worker.createdAt },

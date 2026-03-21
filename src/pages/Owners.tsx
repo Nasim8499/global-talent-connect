@@ -27,7 +27,7 @@ export default function Owners() {
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Personal Details</h3>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { icon: Passport, label: 'Passport', value: owner.passport },
+              { icon: CreditCard, label: 'Passport', value: owner.passport },
               { icon: Flag, label: 'Nationality', value: owner.nationality },
               { icon: Hash, label: 'Internal ID', value: owner.internalId },
               { icon: Building2, label: 'Company', value: owner.company },

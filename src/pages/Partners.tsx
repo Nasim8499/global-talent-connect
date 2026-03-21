@@ -27,7 +27,7 @@ export default function Partners() {
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Partner Details</h3>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { icon: Passport, label: 'Passport', value: partner.passport },
+              { icon: CreditCard, label: 'Passport', value: partner.passport },
               { icon: Flag, label: 'Nationality', value: partner.nationality },
               { icon: Hash, label: 'Internal ID', value: partner.internalId },
               { icon: Handshake, label: 'Partnership', value: 'Active — Nasim & Raja' },
