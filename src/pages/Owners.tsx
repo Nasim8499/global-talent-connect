@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Building2, BookOpen, Flag, Hash, Globe, FileText, Users } from 'lucide-react';
+import { Building2, CreditCard, Flag, Hash, Globe, FileText, Users } from 'lucide-react';
 import { owner } from '@/data/demo';
 
 const fade = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
