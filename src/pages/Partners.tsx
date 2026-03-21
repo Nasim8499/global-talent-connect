@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Passport, Flag, Hash, Handshake, DollarSign, FileText, Calculator } from 'lucide-react';
+import { BookOpen, Flag, Hash, Handshake, FileText, Calculator } from 'lucide-react';
 import { partner, owner } from '@/data/demo';
 
 const fade = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };

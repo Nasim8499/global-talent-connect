@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, MapPin, Phone, Calendar, FileText,
   CreditCard, Clock, CheckCircle2, Circle, Briefcase,
-  Passport, Flag, Hash,
+  CreditCard as PassportIcon, Flag, Hash,
 } from 'lucide-react';
 import { demoWorkers, demoPayments, statusLabels, countryFlags } from '@/data/demo';
 
