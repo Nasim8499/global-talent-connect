@@ -105,4 +105,11 @@
   .status-paid { @apply bg-emerald-50 text-emerald-700; }
   .status-pending { @apply bg-amber-50 text-amber-700; }
   .status-overdue { @apply bg-red-50 text-red-600; }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
