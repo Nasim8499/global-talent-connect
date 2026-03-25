@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Search, ChevronRight, MapPin, Briefcase } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { demoWorkers, statusLabels, countryFlags } from '@/data/demo';
+import SwipeableCards, { SwipeCard } from '@/components/SwipeableCards';
 import type { WorkerStatus } from '@/types';
 
 const filters: { label: string; value: WorkerStatus | 'all' }[] = [
@@ -21,6 +22,8 @@ const fade = {
   animate: { opacity: 1, y: 0 },
 };
 
+const statusOrder: WorkerStatus[] = ['deployed', 'visa_processing', 'approved', 'documents_pending', 'registered'];
+
 export default function Workers() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<WorkerStatus | 'all'>('all');
@@ -31,11 +34,39 @@ export default function Workers() {
     return matchSearch && matchFilter;
   });
 
+  // Get status summary for swipeable status cards
+  const statusSummary = statusOrder.map(s => ({
+    status: s,
+    label: statusLabels[s],
+    count: demoWorkers.filter(w => w.status === s).length,
+  }));
+
   return (
     <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
       <motion.div {...fade} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
         <h1 className="text-xl font-bold text-foreground">Workers</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{demoWorkers.length} total workers</p>
+      </motion.div>
+
+      {/* Status Overview — Swipeable */}
+      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.05, ease: [0.16, 1, 0.3, 1] }} className="mt-4">
+        <SwipeableCards>
+          {statusSummary.map((s) => (
+            <SwipeCard key={s.status} minWidth="120px">
+              <button
+                onClick={() => setFilter(s.status)}
+                className={`w-full card-elevated p-3 text-center transition-all active:scale-95 ${
+                  filter === s.status ? 'ring-2 ring-primary' : ''
+                }`}
+              >
+                <p className="text-xl font-bold text-foreground tabular-nums">{s.count}</p>
+                <p className={`text-[10px] font-medium mt-0.5 status-${s.status} px-2 py-0.5 rounded-full inline-block`}>
+                  {s.label}
+                </p>
+              </button>
+            </SwipeCard>
+          ))}
+        </SwipeableCards>
       </motion.div>
 
       {/* Search */}

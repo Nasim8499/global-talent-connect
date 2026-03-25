@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import {
   Users, FolderKanban, AlertCircle, TrendingUp,
   FileText, Upload, DollarSign, ChevronRight,
-  Clock, CheckCircle2, AlertTriangle, Zap,
+  Clock, CheckCircle2, AlertTriangle, Zap, MapPin,
 } from 'lucide-react';
-import { demoWorkers, demoProjects, demoNotifications, demoActivityLogs, owner } from '@/data/demo';
+import { demoWorkers, demoProjects, demoNotifications, demoActivityLogs, owner, statusLabels, countryFlags } from '@/data/demo';
+import SwipeableCards, { SwipeCard } from '@/components/SwipeableCards';
 
 const fade = {
   initial: { opacity: 0, y: 16 },
@@ -39,6 +40,8 @@ export default function Dashboard() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
+  const recentWorkers = demoWorkers.slice(0, 5);
+
   return (
     <div className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
       {/* Greeting */}
@@ -49,59 +52,90 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground mt-0.5">{owner.company}</p>
       </motion.div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-        {kpis.map((kpi, i) => (
-          <motion.div
-            key={kpi.label}
-            {...fade}
-            transition={{ duration: 0.5, delay: 0.08 * i, ease: [0.16, 1, 0.3, 1] }}
-            className="card-elevated p-4 transition-shadow duration-300"
-          >
-            <div className={`w-9 h-9 rounded-xl ${kpi.color} flex items-center justify-center mb-3`}>
-              <kpi.icon className="w-[18px] h-[18px]" />
-            </div>
-            <p className="text-2xl font-bold text-foreground tabular-nums">
-              {typeof kpi.value === 'number' ? kpi.value : kpi.value}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">{kpi.label}</p>
-            <p className="text-[10px] text-brand-green font-medium mt-1">{kpi.trend}</p>
-          </motion.div>
-        ))}
-      </div>
+      {/* KPI Cards — Swipeable on mobile */}
+      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }} className="mt-6">
+        <div className="hidden md:grid md:grid-cols-4 gap-3">
+          {kpis.map((kpi) => (
+            <KpiCard key={kpi.label} kpi={kpi} />
+          ))}
+        </div>
+        <div className="md:hidden">
+          <SwipeableCards>
+            {kpis.map((kpi) => (
+              <SwipeCard key={kpi.label} minWidth="160px">
+                <KpiCard kpi={kpi} />
+              </SwipeCard>
+            ))}
+          </SwipeableCards>
+        </div>
+      </motion.div>
 
-      {/* Urgent Actions */}
-      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.35, ease: [0.16, 1, 0.3, 1] }} className="mt-8">
+      {/* Urgent Actions — Swipeable */}
+      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }} className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-foreground">Urgent Actions</h2>
           <span className="text-xs text-muted-foreground">{demoNotifications.filter(n => !n.read).length} pending</span>
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x">
+        <SwipeableCards>
           {demoNotifications.filter(n => !n.read).map((n) => {
             const Icon = urgentTypeIcons[n.type] || Clock;
             return (
-              <div
-                key={n.id}
-                className="min-w-[260px] md:min-w-0 md:flex-1 card-elevated p-4 snap-start"
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    n.type === 'urgent' ? 'bg-destructive/10 text-destructive' :
-                    n.type === 'warning' ? 'bg-amber-100 text-amber-700' :
-                    n.type === 'success' ? 'bg-emerald-50 text-emerald-600' :
-                    'bg-brand-blue/10 text-brand-blue'
-                  }`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">{n.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
+              <SwipeCard key={n.id} minWidth="260px">
+                <div className="card-elevated p-4 h-full">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      n.type === 'urgent' ? 'bg-destructive/10 text-destructive' :
+                      n.type === 'warning' ? 'bg-amber-100 text-amber-700' :
+                      n.type === 'success' ? 'bg-emerald-50 text-emerald-600' :
+                      'bg-brand-blue/10 text-brand-blue'
+                    }`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{n.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </SwipeCard>
             );
           })}
+        </SwipeableCards>
+      </motion.div>
+
+      {/* Recent Workers — Swipeable on mobile */}
+      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.35, ease: [0.16, 1, 0.3, 1] }} className="mt-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-foreground">Recent Workers</h2>
+          <Link to="/workers" className="text-xs text-brand-blue flex items-center gap-0.5 hover:underline">
+            View all <ChevronRight className="w-3 h-3" />
+          </Link>
         </div>
+        <SwipeableCards>
+          {recentWorkers.map((w) => (
+            <SwipeCard key={w.id} minWidth="200px">
+              <Link to={`/workers/${w.id}`} className="card-elevated p-4 block h-full hover:shadow-lifted transition-shadow active:scale-[0.97]">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <span className="text-xs font-bold text-primary">{w.firstName[0]}{w.lastName[0]}</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{w.firstName} {w.lastName}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono">{w.internalId}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`status-${w.status} text-[10px] px-2 py-0.5 rounded-full font-medium`}>
+                    {statusLabels[w.status]}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                    <MapPin className="w-3 h-3" /> {countryFlags[w.destinationCountry]} {w.destinationCountry}
+                  </span>
+                </div>
+              </Link>
+            </SwipeCard>
+          ))}
+        </SwipeableCards>
       </motion.div>
 
       {/* Quick Actions */}
@@ -146,6 +180,21 @@ export default function Dashboard() {
           ))}
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+function KpiCard({ kpi }: { kpi: typeof kpis[number] }) {
+  return (
+    <div className="card-elevated p-4 transition-shadow duration-300">
+      <div className={`w-9 h-9 rounded-xl ${kpi.color} flex items-center justify-center mb-3`}>
+        <kpi.icon className="w-[18px] h-[18px]" />
+      </div>
+      <p className="text-2xl font-bold text-foreground tabular-nums">
+        {typeof kpi.value === 'number' ? kpi.value : kpi.value}
+      </p>
+      <p className="text-xs text-muted-foreground mt-0.5">{kpi.label}</p>
+      <p className="text-[10px] text-brand-green font-medium mt-1">{kpi.trend}</p>
     </div>
   );
 }
