@@ -20,6 +20,7 @@ const menuSections = [
   {
     title: 'System',
     items: [
+      { label: 'Drive', icon: HardDrive, path: '/drive', color: 'bg-brand-blue/10 text-brand-blue' },
       { label: 'File Center', icon: FolderOpen, path: '/auto', color: 'bg-amber-100 text-amber-700' },
       { label: 'Notifications', icon: Bell, path: '/', color: 'bg-sky-50 text-sky-600' },
       { label: 'Admin Panel', icon: Shield, path: '/admin', color: 'bg-red-50 text-red-600' },

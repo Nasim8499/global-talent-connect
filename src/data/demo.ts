@@ -96,4 +96,10 @@ export const countryFlags: Record<string, string> = {
   Bangladesh: '🇧🇩',
   'Saudi Arabia': '🇸🇦',
   UAE: '🇦🇪',
+  Australia: '🇦🇺',
+  Serbia: '🇷🇸',
+  Russia: '🇷🇺',
+  Cambodia: '🇰🇭',
+  Moldova: '🇲🇩',
+  Schengen: '🇪🇺',
 };
