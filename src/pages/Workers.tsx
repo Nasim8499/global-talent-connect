@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ChevronRight, MapPin, Briefcase, SortAsc, SortDesc } from 'lucide-react';
+import { Search, ChevronRight, MapPin, Briefcase, SortAsc, SortDesc, Globe, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { demoWorkers, statusLabels, countryFlags } from '@/data/demo';
 import SwipeableCards, { SwipeCard } from '@/components/SwipeableCards';
@@ -17,10 +17,20 @@ const filters: { label: string; value: WorkerStatus | 'all' }[] = [
   { label: 'Done', value: 'completed' },
 ];
 
-const fade = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-};
+const countries = [
+  { code: 'all', label: 'All', flag: '🌍' },
+  { code: 'Australia', label: 'Australia', flag: '🇦🇺' },
+  { code: 'Singapore', label: 'Singapore', flag: '🇸🇬' },
+  { code: 'Serbia', label: 'Serbia', flag: '🇷🇸' },
+  { code: 'Russia', label: 'Russia', flag: '🇷🇺' },
+  { code: 'Cambodia', label: 'Cambodia', flag: '🇰🇭' },
+  { code: 'Moldova', label: 'Moldova', flag: '🇲🇩' },
+  { code: 'Malaysia', label: 'Malaysia', flag: '🇲🇾' },
+  { code: 'Qatar', label: 'Qatar', flag: '🇶🇦' },
+  { code: 'Schengen', label: 'Schengen', flag: '🇪🇺' },
+];
+
+const fade = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
 
 const statusOrder: WorkerStatus[] = ['deployed', 'visa_processing', 'approved', 'documents_pending', 'registered'];
 
@@ -35,13 +45,16 @@ const statusColors: Record<string, string> = {
 export default function Workers() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<WorkerStatus | 'all'>('all');
+  const [countryFilter, setCountryFilter] = useState('all');
   const [sortAsc, setSortAsc] = useState(true);
+  const [showCountryMenu, setShowCountryMenu] = useState(false);
 
   const filtered = demoWorkers
     .filter(w => {
       const matchSearch = `${w.firstName} ${w.lastName} ${w.internalId} ${w.jobTitle}`.toLowerCase().includes(search.toLowerCase());
       const matchFilter = filter === 'all' || w.status === filter;
-      return matchSearch && matchFilter;
+      const matchCountry = countryFilter === 'all' || w.destinationCountry === countryFilter;
+      return matchSearch && matchFilter && matchCountry;
     })
     .sort((a, b) => {
       const nameA = `${a.firstName} ${a.lastName}`;
@@ -55,11 +68,70 @@ export default function Workers() {
     count: demoWorkers.filter(w => w.status === s).length,
   }));
 
+  const activeCountry = countries.find(c => c.code === countryFilter);
+
   return (
     <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
-      <motion.div {...fade} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
-        <h1 className="text-xl font-bold text-foreground">Workers</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{demoWorkers.length} total workers</p>
+      <motion.div {...fade} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Workers</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{demoWorkers.length} total workers</p>
+        </div>
+        {/* Country Button */}
+        <div className="relative">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setShowCountryMenu(!showCountryMenu)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+              countryFilter !== 'all'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-card border border-border/50 text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>{activeCountry?.flag} {activeCountry?.label}</span>
+          </motion.button>
+
+          {/* Country Dropdown */}
+          <AnimatePresence>
+            {showCountryMenu && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowCountryMenu(false)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 top-full mt-2 bg-card border border-border rounded-2xl shadow-lifted z-50 min-w-[180px] overflow-hidden py-1"
+                >
+                  {countries.map((c) => {
+                    const count = c.code === 'all' ? demoWorkers.length : demoWorkers.filter(w => w.destinationCountry === c.code).length;
+                    return (
+                      <motion.button
+                        key={c.code}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => { setCountryFilter(c.code); setShowCountryMenu(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                          countryFilter === c.code ? 'bg-primary/5 text-primary font-medium' : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <span className="text-base">{c.flag}</span>
+                        <span className="flex-1 text-left">{c.label}</span>
+                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{count}</span>
+                      </motion.button>
+                    );
+                  })}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
       </motion.div>
 
       {/* Status Overview — Swipeable */}
@@ -106,7 +178,7 @@ export default function Workers() {
 
       {/* Filters */}
       <motion.div {...fade} transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }} className="mt-3">
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
           {filters.map((f) => {
             const count = f.value === 'all' ? demoWorkers.length : demoWorkers.filter(w => w.status === f.value).length;
             return (
@@ -114,7 +186,7 @@ export default function Workers() {
                 key={f.value}
                 whileTap={{ scale: 0.93 }}
                 onClick={() => setFilter(f.value)}
-                className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                className={`flex-shrink-0 snap-start px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
                   filter === f.value
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'bg-card text-muted-foreground border border-border/50 hover:bg-muted'
@@ -126,6 +198,25 @@ export default function Workers() {
           })}
         </div>
       </motion.div>
+
+      {/* Active Country Filter Badge */}
+      <AnimatePresence>
+        {countryFilter !== 'all' && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-2"
+          >
+            <button
+              onClick={() => setCountryFilter('all')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-blue/10 text-brand-blue text-xs font-medium"
+            >
+              {activeCountry?.flag} {activeCountry?.label} • Clear
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Worker List */}
       <div className="mt-4 space-y-2">
@@ -178,7 +269,7 @@ export default function Workers() {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-12"
           >
-            <Search className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+            <Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">No workers found</p>
             <p className="text-xs text-muted-foreground/60 mt-1">Try adjusting your search or filters</p>
           </motion.div>

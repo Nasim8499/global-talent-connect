@@ -18,6 +18,7 @@ import Admin from "@/pages/Admin";
 import Settings from "@/pages/Settings";
 import Owners from "@/pages/Owners";
 import Partners from "@/pages/Partners";
+import Drive from "@/pages/Drive";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/owners" element={<ProtectedRoute><Owners /></ProtectedRoute>} />
       <Route path="/partners" element={<ProtectedRoute><Partners /></ProtectedRoute>} />
+      <Route path="/drive" element={<ProtectedRoute><Drive /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

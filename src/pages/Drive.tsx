@@ -1,0 +1,339 @@
+import { useState, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Upload, FolderOpen, Grid3X3, List, Search, MoreVertical,
+  FileText, Image as ImageIcon, File, Trash2, Eye, Download,
+  Plus, X, Filter, SortAsc,
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import DocumentViewer from '@/components/DocumentViewer';
+
+interface DriveFile {
+  id: string;
+  name: string;
+  type: 'pdf' | 'image' | 'document';
+  size: string;
+  date: string;
+  folder: string;
+  url: string;
+  thumbnail?: string;
+}
+
+const folders = [
+  { id: 'all', label: 'All Files', icon: FolderOpen, color: 'bg-brand-blue/10 text-brand-blue' },
+  { id: 'agreements', label: 'Agreements', icon: FileText, color: 'bg-primary/10 text-primary' },
+  { id: 'passports', label: 'Passports', icon: ImageIcon, color: 'bg-brand-gold/10 text-brand-gold' },
+  { id: 'visas', label: 'Visas', icon: File, color: 'bg-brand-green/10 text-brand-green' },
+  { id: 'receipts', label: 'Receipts', icon: FileText, color: 'bg-amber-100 text-amber-700' },
+];
+
+const demoFiles: DriveFile[] = [
+  { id: 'f1', name: 'Partnership_Agreement_2026.pdf', type: 'pdf', size: '2.4 MB', date: '2026-03-15', folder: 'agreements', url: '', thumbnail: '' },
+  { id: 'f2', name: 'Worker_Contract_Rahman.pdf', type: 'pdf', size: '1.8 MB', date: '2026-03-10', folder: 'agreements', url: '', thumbnail: '' },
+  { id: 'f3', name: 'Passport_Mohammad_Rahman.jpg', type: 'image', size: '3.1 MB', date: '2026-01-15', folder: 'passports', url: 'https://images.unsplash.com/photo-1578681994506-b8f463449011?w=800', thumbnail: 'https://images.unsplash.com/photo-1578681994506-b8f463449011?w=200' },
+  { id: 'f4', name: 'Visa_SG_Abdul_Karim.pdf', type: 'pdf', size: '0.9 MB', date: '2026-02-20', folder: 'visas', url: '', thumbnail: '' },
+  { id: 'f5', name: 'Payment_Receipt_Jan2026.pdf', type: 'pdf', size: '0.5 MB', date: '2026-01-30', folder: 'receipts', url: '', thumbnail: '' },
+  { id: 'f6', name: 'Passport_Abdul_Karim.jpg', type: 'image', size: '2.9 MB', date: '2026-01-20', folder: 'passports', url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800', thumbnail: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200' },
+  { id: 'f7', name: 'Employer_Contract_Hyundai.pdf', type: 'pdf', size: '3.2 MB', date: '2026-01-08', folder: 'agreements', url: '', thumbnail: '' },
+  { id: 'f8', name: 'Medical_Report_Batch01.pdf', type: 'pdf', size: '4.1 MB', date: '2026-02-10', folder: 'visas', url: '', thumbnail: '' },
+];
+
+const fade = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
+
+const fileIcons: Record<string, typeof FileText> = { pdf: FileText, image: ImageIcon, document: File };
+const fileColors: Record<string, string> = { pdf: 'bg-red-50 text-red-500', image: 'bg-brand-blue/10 text-brand-blue', document: 'bg-muted text-muted-foreground' };
+
+export default function Drive() {
+  const [files, setFiles] = useState<DriveFile[]>(demoFiles);
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [search, setSearch] = useState('');
+  const [activeFolder, setActiveFolder] = useState('all');
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerFile, setViewerFile] = useState<{ name: string; type: 'pdf' | 'image'; url: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filtered = files.filter(f => {
+    const matchFolder = activeFolder === 'all' || f.folder === activeFolder;
+    const matchSearch = f.name.toLowerCase().includes(search.toLowerCase());
+    return matchFolder && matchSearch;
+  });
+
+  const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFiles = e.target.files;
+    if (!uploadedFiles) return;
+
+    Array.from(uploadedFiles).forEach((file) => {
+      const isPdf = file.type === 'application/pdf';
+      const isImage = file.type.startsWith('image/');
+      const url = URL.createObjectURL(file);
+
+      const newFile: DriveFile = {
+        id: `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name: file.name,
+        type: isPdf ? 'pdf' : isImage ? 'image' : 'document',
+        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        date: new Date().toISOString().split('T')[0],
+        folder: isPdf ? 'agreements' : isImage ? 'passports' : 'agreements',
+        url,
+        thumbnail: isImage ? url : undefined,
+      };
+      setFiles(prev => [newFile, ...prev]);
+    });
+
+    toast.success(`${uploadedFiles.length} file(s) uploaded`);
+    e.target.value = '';
+  }, []);
+
+  const openFile = useCallback((f: DriveFile) => {
+    if (f.type === 'image' || f.url) {
+      setViewerFile({ name: f.name, type: f.type === 'image' ? 'image' : 'pdf', url: f.url || '' });
+      setViewerOpen(true);
+    } else {
+      toast.info('Preview not available for this file type');
+    }
+  }, []);
+
+  const deleteFile = useCallback((id: string) => {
+    setFiles(prev => prev.filter(f => f.id !== id));
+    setContextMenu(null);
+    toast.success('File deleted');
+  }, []);
+
+  return (
+    <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <motion.div {...fade} transition={{ duration: 0.5 }} className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Drive</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{files.length} files • Google Drive style</p>
+        </div>
+        <div className="flex gap-2">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setView(view === 'grid' ? 'list' : 'grid')}
+            className="p-2.5 rounded-xl bg-card border border-border/50 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {view === 'grid' ? <List className="w-4 h-4" /> : <Grid3X3 className="w-4 h-4" />}
+          </motion.button>
+        </div>
+      </motion.div>
+
+      {/* Folder Tabs — Swipeable */}
+      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.05 }} className="mt-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {folders.map((folder) => {
+            const count = folder.id === 'all' ? files.length : files.filter(f => f.folder === folder.id).length;
+            return (
+              <motion.button
+                key={folder.id}
+                whileTap={{ scale: 0.93 }}
+                onClick={() => setActiveFolder(folder.id)}
+                className={`flex-shrink-0 snap-start flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 ${
+                  activeFolder === folder.id
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-card text-muted-foreground border border-border/50 hover:bg-muted'
+                }`}
+              >
+                <folder.icon className="w-3.5 h-3.5" />
+                {folder.label} ({count})
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+
+      {/* Search + Upload */}
+      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.1 }} className="mt-4 flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search files..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-10 h-11 rounded-xl bg-card border-border/50"
+          />
+        </div>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => fileInputRef.current?.click()}
+          className="h-11 px-4 rounded-xl gradient-navy text-white text-sm font-medium flex items-center gap-2 active:scale-95 transition-transform"
+        >
+          <Upload className="w-4 h-4" />
+          <span className="hidden sm:inline">Upload</span>
+        </motion.button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.pdf"
+          multiple
+          className="hidden"
+          onChange={handleUpload}
+        />
+      </motion.div>
+
+      {/* Files Grid/List */}
+      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.15 }} className="mt-5">
+        {view === 'grid' ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <AnimatePresence mode="popLayout">
+              {filtered.map((file, i) => {
+                const Icon = fileIcons[file.type] || File;
+                return (
+                  <motion.div
+                    key={file.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: 0.02 * i, duration: 0.3 }}
+                    className="relative"
+                  >
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => openFile(file)}
+                      className="w-full card-elevated overflow-hidden text-left transition-shadow hover:shadow-lifted group"
+                    >
+                      {/* Thumbnail / Icon */}
+                      <div className="aspect-[4/3] bg-muted/50 flex items-center justify-center overflow-hidden relative">
+                        {file.type === 'image' && file.thumbnail ? (
+                          <img src={file.thumbnail} alt={file.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={`w-12 h-12 rounded-xl ${fileColors[file.type]} flex items-center justify-center`}>
+                            <Icon className="w-6 h-6" />
+                          </div>
+                        )}
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <Eye className="w-6 h-6 text-white drop-shadow-lg" />
+                        </div>
+                      </div>
+                      <div className="p-3">
+                        <p className="text-xs font-medium text-foreground truncate">{file.name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-[10px] text-muted-foreground">{file.size}</span>
+                          <span className="text-[10px] text-muted-foreground">{new Date(file.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        </div>
+                      </div>
+                    </motion.button>
+                    {/* Context menu */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setContextMenu(contextMenu === file.id ? null : file.id); }}
+                      className="absolute top-2 right-2 p-1 rounded-lg bg-black/30 hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-100"
+                    >
+                      <MoreVertical className="w-3.5 h-3.5 text-white" />
+                    </button>
+                    <AnimatePresence>
+                      {contextMenu === file.id && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="absolute top-8 right-2 bg-card border border-border rounded-xl shadow-lifted z-10 overflow-hidden min-w-[140px]"
+                        >
+                          <button onClick={() => openFile(file)} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
+                            <Eye className="w-3.5 h-3.5" /> Preview
+                          </button>
+                          <button onClick={() => { setContextMenu(null); toast.info('Download started'); }} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
+                            <Download className="w-3.5 h-3.5" /> Download
+                          </button>
+                          <button onClick={() => deleteFile(file.id)} className="flex items-center gap-2 px-3 py-2.5 text-xs text-destructive hover:bg-destructive/5 w-full transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        ) : (
+          /* List View */
+          <div className="space-y-1.5">
+            <AnimatePresence mode="popLayout">
+              {filtered.map((file, i) => {
+                const Icon = fileIcons[file.type] || File;
+                return (
+                  <motion.div
+                    key={file.id}
+                    layout
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 8 }}
+                    transition={{ delay: 0.02 * i, duration: 0.25 }}
+                  >
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => openFile(file)}
+                      className="w-full card-elevated p-3.5 flex items-center gap-3 text-left hover:shadow-lifted transition-shadow active:scale-[0.99]"
+                    >
+                      {file.type === 'image' && file.thumbnail ? (
+                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                          <img src={file.thumbnail} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className={`w-10 h-10 rounded-lg ${fileColors[file.type]} flex items-center justify-center flex-shrink-0`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{file.size} • {new Date(file.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); deleteFile(file.id); }}
+                        className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </motion.button>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {filtered.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-16"
+          >
+            <FolderOpen className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground font-medium">No files found</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Upload PDFs or images to get started</p>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-4 px-5 py-2.5 rounded-xl gradient-navy text-white text-sm font-medium inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Upload Files
+            </motion.button>
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* Upload FAB (mobile) */}
+      <motion.button
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 0.3, type: 'spring' }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => fileInputRef.current?.click()}
+        className="md:hidden fixed bottom-28 right-4 w-14 h-14 rounded-2xl gradient-gold shadow-lifted flex items-center justify-center z-50"
+      >
+        <Upload className="w-6 h-6 text-primary" />
+      </motion.button>
+
+      {/* Document Viewer */}
+      <DocumentViewer
+        open={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        file={viewerFile}
+      />
+    </div>
+  );
+}

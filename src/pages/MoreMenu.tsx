@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  FileText, DollarSign, Shield, Settings, UserCircle,
+  FileText, DollarSign, Shield, Settings, UserCircle, HardDrive,
   Handshake, FolderOpen, Bell, HelpCircle, LogOut,
   ChevronRight,
 } from 'lucide-react';
@@ -20,6 +20,7 @@ const menuSections = [
   {
     title: 'System',
     items: [
+      { label: 'Drive', icon: HardDrive, path: '/drive', color: 'bg-brand-blue/10 text-brand-blue' },
       { label: 'File Center', icon: FolderOpen, path: '/auto', color: 'bg-amber-100 text-amber-700' },
       { label: 'Notifications', icon: Bell, path: '/', color: 'bg-sky-50 text-sky-600' },
       { label: 'Admin Panel', icon: Shield, path: '/admin', color: 'bg-red-50 text-red-600' },

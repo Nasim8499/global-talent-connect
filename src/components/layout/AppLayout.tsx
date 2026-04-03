@@ -22,6 +22,7 @@ const sidebarLinks = [
   { path: '/workers', icon: Users, label: 'Workers' },
   { path: '/projects', icon: FolderKanban, label: 'Projects' },
   { path: '/auto', icon: Upload, label: 'Auto System' },
+  { path: '/drive', icon: FolderKanban, label: 'Drive' },
   { path: '/agreements', icon: FileText, label: 'Agreements' },
   { path: '/finance', icon: DollarSign, label: 'Finance' },
   { path: '/owners', icon: UserCircle, label: 'Owner Profile' },
