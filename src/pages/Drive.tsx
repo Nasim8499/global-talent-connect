@@ -1,9 +1,9 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, DragEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload, FolderOpen, Grid3X3, List, Search, MoreVertical,
   FileText, Image as ImageIcon, File, Trash2, Eye, Download,
-  Plus, X, Filter, SortAsc,
+  Plus, CloudUpload,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -39,10 +39,28 @@ const demoFiles: DriveFile[] = [
   { id: 'f8', name: 'Medical_Report_Batch01.pdf', type: 'pdf', size: '4.1 MB', date: '2026-02-10', folder: 'visas', url: '', thumbnail: '' },
 ];
 
-const fade = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
-
 const fileIcons: Record<string, typeof FileText> = { pdf: FileText, image: ImageIcon, document: File };
 const fileColors: Record<string, string> = { pdf: 'bg-red-50 text-red-500', image: 'bg-brand-blue/10 text-brand-blue', document: 'bg-muted text-muted-foreground' };
+
+const fade = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
+
+function processFiles(fileList: FileList): DriveFile[] {
+  return Array.from(fileList).map((file) => {
+    const isPdf = file.type === 'application/pdf';
+    const isImage = file.type.startsWith('image/');
+    const url = URL.createObjectURL(file);
+    return {
+      id: `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name: file.name,
+      type: isPdf ? 'pdf' : isImage ? 'image' : 'document' as const,
+      size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+      date: new Date().toISOString().split('T')[0],
+      folder: isPdf ? 'agreements' : isImage ? 'passports' : 'agreements',
+      url,
+      thumbnail: isImage ? url : undefined,
+    };
+  });
+}
 
 export default function Drive() {
   const [files, setFiles] = useState<DriveFile[]>(demoFiles);
@@ -52,6 +70,8 @@ export default function Drive() {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerFile, setViewerFile] = useState<{ name: string; type: 'pdf' | 'image'; url: string } | null>(null);
   const [contextMenu, setContextMenu] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounter = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = files.filter(f => {
@@ -60,31 +80,52 @@ export default function Drive() {
     return matchFolder && matchSearch;
   });
 
-  const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFiles = e.target.files;
-    if (!uploadedFiles) return;
-
-    Array.from(uploadedFiles).forEach((file) => {
-      const isPdf = file.type === 'application/pdf';
-      const isImage = file.type.startsWith('image/');
-      const url = URL.createObjectURL(file);
-
-      const newFile: DriveFile = {
-        id: `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        name: file.name,
-        type: isPdf ? 'pdf' : isImage ? 'image' : 'document',
-        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-        date: new Date().toISOString().split('T')[0],
-        folder: isPdf ? 'agreements' : isImage ? 'passports' : 'agreements',
-        url,
-        thumbnail: isImage ? url : undefined,
-      };
-      setFiles(prev => [newFile, ...prev]);
-    });
-
-    toast.success(`${uploadedFiles.length} file(s) uploaded`);
-    e.target.value = '';
+  const addFiles = useCallback((fileList: FileList) => {
+    const newFiles = processFiles(fileList);
+    setFiles(prev => [...newFiles, ...prev]);
+    toast.success(`${newFiles.length} file(s) uploaded`);
   }, []);
+
+  const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      addFiles(e.target.files);
+      e.target.value = '';
+    }
+  }, [addFiles]);
+
+  // Drag & drop handlers
+  const handleDragEnter = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
+    if (e.dataTransfer.files?.length) {
+      addFiles(e.dataTransfer.files);
+    }
+  }, [addFiles]);
 
   const openFile = useCallback((f: DriveFile) => {
     if (f.type === 'image' || f.url) {
@@ -102,12 +143,50 @@ export default function Drive() {
   }, []);
 
   return (
-    <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
+    <div
+      className="px-4 md:px-8 py-6 max-w-4xl mx-auto relative min-h-[80vh]"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Drag & Drop Overlay */}
+      <AnimatePresence>
+        {isDragging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            style={{ pointerEvents: 'none' }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="flex flex-col items-center gap-4 p-10 rounded-3xl border-2 border-dashed border-primary/40 bg-primary/5"
+            >
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+              >
+                <CloudUpload className="w-16 h-16 text-primary/60" />
+              </motion.div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-foreground">Drop files here</p>
+                <p className="text-sm text-muted-foreground mt-1">PDF, JPG, PNG — any document</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.div {...fade} transition={{ duration: 0.5 }} className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Drive</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{files.length} files • Google Drive style</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{files.length} files</p>
         </div>
         <div className="flex gap-2">
           <motion.button
@@ -120,9 +199,9 @@ export default function Drive() {
         </div>
       </motion.div>
 
-      {/* Folder Tabs — Swipeable */}
+      {/* Folder Tabs */}
       <motion.div {...fade} transition={{ duration: 0.5, delay: 0.05 }} className="mt-4">
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory touch-pan-x" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
           {folders.map((folder) => {
             const count = folder.id === 'all' ? files.length : files.filter(f => f.folder === folder.id).length;
             return (
@@ -188,14 +267,13 @@ export default function Drive() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: 0.02 * i, duration: 0.3 }}
-                    className="relative"
+                    className="relative group"
                   >
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => openFile(file)}
-                      className="w-full card-elevated overflow-hidden text-left transition-shadow hover:shadow-lifted group"
+                      className="w-full card-elevated overflow-hidden text-left transition-shadow hover:shadow-lifted"
                     >
-                      {/* Thumbnail / Icon */}
                       <div className="aspect-[4/3] bg-muted/50 flex items-center justify-center overflow-hidden relative">
                         {file.type === 'image' && file.thumbnail ? (
                           <img src={file.thumbnail} alt={file.name} className="w-full h-full object-cover" />
@@ -204,7 +282,6 @@ export default function Drive() {
                             <Icon className="w-6 h-6" />
                           </div>
                         )}
-                        {/* Hover overlay */}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                           <Eye className="w-6 h-6 text-white drop-shadow-lg" />
                         </div>
@@ -217,31 +294,39 @@ export default function Drive() {
                         </div>
                       </div>
                     </motion.button>
-                    {/* Context menu */}
                     <button
                       onClick={(e) => { e.stopPropagation(); setContextMenu(contextMenu === file.id ? null : file.id); }}
-                      className="absolute top-2 right-2 p-1 rounded-lg bg-black/30 hover:bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-100"
+                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/40 text-white opacity-0 group-hover:opacity-100 md:opacity-70 transition-opacity active:scale-90"
                     >
-                      <MoreVertical className="w-3.5 h-3.5 text-white" />
+                      <MoreVertical className="w-3.5 h-3.5" />
                     </button>
                     <AnimatePresence>
                       {contextMenu === file.id && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          className="absolute top-8 right-2 bg-card border border-border rounded-xl shadow-lifted z-10 overflow-hidden min-w-[140px]"
-                        >
-                          <button onClick={() => openFile(file)} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
-                            <Eye className="w-3.5 h-3.5" /> Preview
-                          </button>
-                          <button onClick={() => { setContextMenu(null); toast.info('Download started'); }} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
-                            <Download className="w-3.5 h-3.5" /> Download
-                          </button>
-                          <button onClick={() => deleteFile(file.id)} className="flex items-center gap-2 px-3 py-2.5 text-xs text-destructive hover:bg-destructive/5 w-full transition-colors">
-                            <Trash2 className="w-3.5 h-3.5" /> Delete
-                          </button>
-                        </motion.div>
+                        <>
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[9]"
+                            onClick={() => setContextMenu(null)}
+                          />
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="absolute top-10 right-2 bg-card border border-border rounded-xl shadow-lifted z-10 overflow-hidden min-w-[140px]"
+                          >
+                            <button onClick={() => { openFile(file); setContextMenu(null); }} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
+                              <Eye className="w-3.5 h-3.5" /> Preview
+                            </button>
+                            <button onClick={() => { setContextMenu(null); toast.info('Download started'); }} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
+                              <Download className="w-3.5 h-3.5" /> Download
+                            </button>
+                            <button onClick={() => deleteFile(file.id)} className="flex items-center gap-2 px-3 py-2.5 text-xs text-destructive hover:bg-destructive/5 w-full transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" /> Delete
+                            </button>
+                          </motion.div>
+                        </>
                       )}
                     </AnimatePresence>
                   </motion.div>
@@ -250,7 +335,6 @@ export default function Drive() {
             </AnimatePresence>
           </div>
         ) : (
-          /* List View */
           <div className="space-y-1.5">
             <AnimatePresence mode="popLayout">
               {filtered.map((file, i) => {
@@ -304,7 +388,7 @@ export default function Drive() {
           >
             <FolderOpen className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground font-medium">No files found</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Upload PDFs or images to get started</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Upload or drag & drop PDFs and images</p>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => fileInputRef.current?.click()}
