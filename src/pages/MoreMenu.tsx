@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  FileText, DollarSign, Shield, Settings, UserCircle,
+  FileText, DollarSign, Shield, Settings, UserCircle, HardDrive,
   Handshake, FolderOpen, Bell, HelpCircle, LogOut,
   ChevronRight,
 } from 'lucide-react';
