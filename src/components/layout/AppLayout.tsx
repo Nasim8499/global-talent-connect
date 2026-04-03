@@ -125,7 +125,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <div className="pb-24 md:pb-6">
+        <div className="pb-24 md:pb-6 overflow-x-hidden">
           {children}
         </div>
       </main>

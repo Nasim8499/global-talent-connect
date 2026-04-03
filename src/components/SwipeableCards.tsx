@@ -1,5 +1,4 @@
 import { useRef, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
 
 interface SwipeableCardsProps {
   children: ReactNode;
@@ -10,15 +9,14 @@ export default function SwipeableCards({ children, className = '' }: SwipeableCa
   const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="relative">
-      <motion.div
+    <div className="relative overflow-hidden">
+      <div
         ref={scrollRef}
-        className={`flex gap-3 overflow-x-auto pb-3 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory scrollbar-hide ${className}`}
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        className={`flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory scrollbar-hide touch-pan-x ${className}`}
+        style={{ WebkitOverflowScrolling: 'touch', msOverflowStyle: 'none', scrollbarWidth: 'none' }}
       >
         {children}
-      </motion.div>
-      {/* Fade edges on mobile */}
+      </div>
       <div className="md:hidden pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" />
     </div>
   );
