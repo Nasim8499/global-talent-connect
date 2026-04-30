@@ -462,6 +462,20 @@ export default function Dashboard() {
           </motion.div>
         </div>
       </div>
+
+      <DocumentViewer
+        open={!!previewing}
+        onClose={() => setPreviewTile(null)}
+        file={
+          previewing && previewing.dataUrl
+            ? {
+                name: previewing.caption || previewing.title,
+                type: previewing.kind === 'PDF' ? 'pdf' : 'image',
+                url: previewing.dataUrl,
+              }
+            : null
+        }
+      />
     </div>
   );
 }
