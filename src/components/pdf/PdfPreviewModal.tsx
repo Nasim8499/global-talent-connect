@@ -19,6 +19,29 @@ export default function PdfPreviewModal({ open, onClose, title, pages }: PdfPrev
   const pagesContainerRef = useRef<HTMLDivElement>(null);
   const visiblePageRef = useRef<HTMLDivElement>(null);
 
+  // Responsive scaling: fit 595px-wide page into the available wrapper width
+  useEffect(() => {
+    if (!open) return;
+    const update = () => {
+      const wrappers = pagesContainerRef.current?.querySelectorAll<HTMLElement>('[data-pdf-visible]');
+      wrappers?.forEach((el) => {
+        const parent = el.parentElement;
+        if (!parent) return;
+        const w = parent.clientWidth;
+        const scale = Math.min(1, w / 595);
+        el.style.setProperty('--pdf-scale', String(scale));
+      });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    if (pagesContainerRef.current) ro.observe(pagesContainerRef.current);
+    window.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [open, currentPage]);
+
   const handleDownload = useCallback(async () => {
     setDownloading(true);
     try {
