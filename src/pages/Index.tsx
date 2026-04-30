@@ -112,9 +112,9 @@ export default function Dashboard() {
       </div>
 
       {/* Stats + Activity row */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 items-start">
         {/* Stat cards 2x2 / 4-up */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 self-start">
           {stats.map((s, i) => (
             <motion.div
               key={s.label}
