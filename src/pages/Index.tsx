@@ -167,10 +167,10 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
-          <div className="flex-1 flex items-end gap-2 mt-4 min-h-[180px]">
+          <div className="flex-1 flex items-end gap-2 mt-4 min-h-[200px] h-[200px]">
             {activity.map((v, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <div className="w-full relative h-full flex items-end">
+              <div key={i} className="flex-1 h-full flex flex-col items-center gap-2">
+                <div className="w-full relative flex-1 flex items-end">
                   <div className="absolute inset-0 ubright-stripe rounded-md opacity-30" />
                   <motion.div
                     initial={{ height: 0 }}
