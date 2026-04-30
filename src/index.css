@@ -4,26 +4,26 @@
 
 @layer base {
   :root {
-    --background: 0 0% 4%;
+    --background: 215 45% 12%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 8%;
+    --card: 215 40% 18%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;
+    --popover: 215 40% 16%;
     --popover-foreground: 0 0% 98%;
-    --primary: 217 100% 56%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 12%;
+    --primary: 187 85% 65%;
+    --primary-foreground: 215 50% 10%;
+    --secondary: 215 35% 22%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 217 100% 56%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --muted: 215 30% 24%;
+    --muted-foreground: 210 25% 75%;
+    --accent: 187 85% 65%;
+    --accent-foreground: 215 50% 10%;
+    --destructive: 12 85% 62%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 16%;
-    --input: 0 0% 14%;
-    --ring: 217 100% 56%;
-    --radius: 1rem;
+    --border: 210 30% 32%;
+    --input: 215 30% 22%;
+    --ring: 187 85% 65%;
+    --radius: 1.25rem;
 
     --navy: 222 47% 11%;
     --navy-deep: 225 55% 7%;
@@ -52,7 +52,12 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, hsl(210 60% 28% / 0.55), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, hsl(200 70% 22% / 0.5), transparent 60%),
+      linear-gradient(160deg, hsl(215 55% 9%) 0%, hsl(215 50% 13%) 60%, hsl(210 45% 17%) 100%);
+    background-attachment: fixed;
     font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -75,13 +80,38 @@
 
 @layer components {
   .gradient-navy {
-    background: linear-gradient(135deg, hsl(225 55% 7%) 0%, hsl(222 47% 11%) 50%, hsl(218 35% 20%) 100%);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, hsl(210 60% 28% / 0.7), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, hsl(200 70% 22% / 0.6), transparent 60%),
+      linear-gradient(160deg, hsl(215 55% 10%) 0%, hsl(215 50% 14%) 60%, hsl(210 45% 18%) 100%);
   }
   .gradient-gold {
     background: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(28 90% 55%) 100%);
   }
   .gradient-blue {
     background: linear-gradient(135deg, hsl(210 100% 56%) 0%, hsl(220 80% 50%) 100%);
+  }
+  .frosted {
+    background: linear-gradient(180deg, hsl(0 0% 100% / 0.14), hsl(0 0% 100% / 0.06));
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border: 1px solid hsl(0 0% 100% / 0.18);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.18),
+      0 20px 50px -20px hsl(215 70% 5% / 0.6);
+  }
+  .frosted-light {
+    background: linear-gradient(180deg, hsl(0 0% 100% / 0.92), hsl(0 0% 100% / 0.78));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(0 0% 100% / 0.6);
+    box-shadow: 0 18px 40px -18px hsl(215 70% 5% / 0.5);
+    color: hsl(215 50% 12%);
+  }
+  .pill-dark {
+    background: hsl(215 55% 10%);
+    color: hsl(0 0% 100%);
+    border-radius: 999px;
   }
   .glass {
     background: rgba(255, 255, 255, 0.08);
