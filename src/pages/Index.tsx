@@ -2,11 +2,14 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Award, Clock, BookOpen, CheckCircle2, ChevronRight, ChevronLeft,
-  Plus, MoreHorizontal, Mail, Bell, TrendingUp, Mic, Video, Play,
-  Download, Users,
+  Plus, MoreHorizontal, Mail, Bell, TrendingUp, Users,
 } from 'lucide-react';
 import { demoWorkers, demoProjects, demoPayments, owner } from '@/data/demo';
 import { useState } from 'react';
+import DashboardTile from '@/components/DashboardTile';
+import DocumentViewer from '@/components/DocumentViewer';
+import { useDashboardTiles } from '@/hooks/useDashboardTiles';
+import { toast } from 'sonner';
 
 const fade = {
   initial: { opacity: 0, y: 16 },
@@ -31,12 +34,6 @@ const navTabs = [
   { label: 'Projects', path: '/projects' },
 ];
 
-const courses = [
-  { title: 'Singapore Deployment Pack', kind: 'Document', count: '5 files', tone: 'red' },
-  { title: 'Worker Onboarding Brief', kind: 'Video', count: '8 videos', tone: 'amber' },
-  { title: 'Compliance & Etiquette', kind: 'Audio', count: '14 voicenotes', tone: 'rose' },
-];
-
 // Activity bars (Mon-Sun)
 const activity = [38, 52, 28, 70, 36, 95, 88];
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -45,6 +42,9 @@ const today = 1;
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const { tiles, uploadToTile, clearTile, addTile } = useDashboardTiles();
+  const [previewTile, setPreviewTile] = useState<string | null>(null);
+  const previewing = tiles.find((t) => t.id === previewTile);
 
   return (
     <div className="px-3 sm:px-5 lg:px-8 py-4 lg:py-6 max-w-[1500px] mx-auto">
