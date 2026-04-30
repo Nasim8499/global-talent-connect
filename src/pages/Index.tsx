@@ -1,309 +1,468 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
-  Users, FolderKanban, AlertCircle, TrendingUp,
-  FileText, Upload, DollarSign, ChevronRight,
-  Clock, CheckCircle2, AlertTriangle, Zap, MapPin,
-  BarChart3,
+  Award, Clock, BookOpen, CheckCircle2, ChevronRight, ChevronLeft,
+  Plus, MoreHorizontal, Mail, Bell, TrendingUp, Mic, Video, Play,
+  Download, Users,
 } from 'lucide-react';
-import { demoWorkers, demoProjects, demoNotifications, demoActivityLogs, demoPayments, owner, statusLabels, countryFlags } from '@/data/demo';
-import SwipeableCards, { SwipeCard } from '@/components/SwipeableCards';
+import { demoWorkers, demoProjects, demoPayments, owner } from '@/data/demo';
+import { useState } from 'react';
 
 const fade = {
   initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0 },
 };
 
-const totalRevenue = demoPayments.filter(p => p.type === 'revenue' || p.type === 'service_charge').reduce((s, p) => s + p.amount, 0);
+const totalRevenue = demoPayments
+  .filter((p) => p.type === 'revenue' || p.type === 'service_charge')
+  .reduce((s, p) => s + p.amount, 0);
 
-const kpis = [
-  { label: 'Total Workers', value: demoWorkers.length, icon: Users, trend: '+2 this month', color: 'bg-brand-blue/10 text-brand-blue' },
-  { label: 'Active Projects', value: demoProjects.filter(p => p.status !== 'completed').length, icon: FolderKanban, trend: '1 starting soon', color: 'bg-brand-green/10 text-brand-green' },
-  { label: 'Pending Actions', value: demoNotifications.filter(n => !n.read).length, icon: AlertCircle, trend: '2 urgent', color: 'bg-amber-100 text-amber-700' },
-  { label: 'Revenue', value: `$${(totalRevenue / 1000).toFixed(0)}K`, icon: TrendingUp, trend: '+32% vs last Q', color: 'bg-emerald-50 text-emerald-600' },
+const stats = [
+  { value: demoWorkers.filter((w) => w.status === 'completed' || w.status === 'deployed').length, label: 'Completed Deployments', cta: 'View Records', icon: Award, path: '/workers' },
+  { value: 180, label: 'Total Service Hours', cta: 'Service Report', icon: Clock, path: '/finance' },
+  { value: demoProjects.filter((p) => p.status !== 'completed').length, label: 'Currently Active', cta: 'Go to Projects', icon: BookOpen, path: '/projects' },
+  { value: demoWorkers.filter((w) => w.status === 'approved').length, label: 'Approval Success', cta: 'Review Items', icon: CheckCircle2, path: '/workers' },
 ];
 
-const quickActions = [
-  { label: 'Add Worker', icon: Users, path: '/workers', color: 'bg-brand-blue/10 text-brand-blue' },
-  { label: 'New Project', icon: FolderKanban, path: '/projects', color: 'bg-brand-green/10 text-brand-green' },
-  { label: 'Upload Doc', icon: Upload, path: '/auto', color: 'bg-amber-100 text-amber-700' },
-  { label: 'Agreement', icon: FileText, path: '/agreements', color: 'bg-primary/10 text-primary' },
-  { label: 'Finance', icon: DollarSign, path: '/finance', color: 'bg-emerald-50 text-emerald-600' },
-  { label: 'Quick Scan', icon: Zap, path: '/auto', color: 'bg-brand-gold/10 text-brand-gold' },
+const navTabs = [
+  { label: 'Assignments', path: '/auto' },
+  { label: 'Dashboard', path: '/' },
+  { label: 'Workers', path: '/workers' },
+  { label: 'Projects', path: '/projects' },
 ];
 
-const urgentTypeIcons: Record<string, typeof AlertCircle> = {
-  urgent: AlertTriangle,
-  warning: AlertCircle,
-  success: CheckCircle2,
-  info: Clock,
-};
+const courses = [
+  { title: 'Singapore Deployment Pack', kind: 'Document', count: '5 files', tone: 'red' },
+  { title: 'Worker Onboarding Brief', kind: 'Video', count: '8 videos', tone: 'amber' },
+  { title: 'Compliance & Etiquette', kind: 'Audio', count: '14 voicenotes', tone: 'rose' },
+];
+
+// Activity bars (Mon-Sun)
+const activity = [38, 52, 28, 70, 36, 95, 88];
+const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const calendarDays = Array.from({ length: 31 }, (_, i) => i + 1);
+const today = 1;
 
 export default function Dashboard() {
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-
-  const recentWorkers = demoWorkers.slice(0, 5);
-
-  // Mini chart data for revenue
-  const revenueData = [28, 42, 35, 55, 48, 60, 72];
+  const [activeTab, setActiveTab] = useState('Dashboard');
 
   return (
-    <div className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
-      {/* Greeting */}
-      <motion.div {...fade} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground leading-tight">
-          {greeting}, {owner.name.split(' ')[0]}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{owner.company}</p>
-      </motion.div>
-
-      {/* KPI Cards — Swipeable on mobile */}
-      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }} className="mt-6">
-        <div className="hidden md:grid md:grid-cols-4 gap-3">
-          {kpis.map((kpi) => (
-            <KpiCard key={kpi.label} kpi={kpi} />
-          ))}
-        </div>
-        <div className="md:hidden">
-          <SwipeableCards>
-            {kpis.map((kpi) => (
-              <SwipeCard key={kpi.label} minWidth="160px">
-                <KpiCard kpi={kpi} />
-              </SwipeCard>
-            ))}
-          </SwipeableCards>
-        </div>
-      </motion.div>
-
-      {/* Revenue Mini Chart */}
-      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.18, ease: [0.16, 1, 0.3, 1] }} className="mt-4">
-        <div className="card-elevated p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-brand-blue" />
-              <h3 className="text-xs font-semibold text-foreground">Revenue Trend</h3>
-            </div>
-            <span className="text-[10px] text-brand-green font-medium">+32%</span>
+    <div className="px-3 sm:px-5 lg:px-8 py-4 lg:py-6 max-w-[1500px] mx-auto">
+      {/* Top bar — logo + pill nav + actions */}
+      <motion.div
+        {...fade}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="flex items-center justify-between gap-3 mb-5"
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+            <span className="text-white font-black text-sm">V</span>
           </div>
-          <div className="flex items-end gap-1.5 h-12">
-            {revenueData.map((val, i) => (
-              <motion.div
-                key={i}
-                initial={{ height: 0 }}
-                animate={{ height: `${(val / 80) * 100}%` }}
-                transition={{ delay: 0.3 + i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="flex-1 rounded-t gradient-blue min-h-[4px]"
-              />
-            ))}
-          </div>
-          <div className="flex justify-between mt-1.5">
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
-              <span key={d} className="text-[8px] text-muted-foreground flex-1 text-center">{d}</span>
-            ))}
-          </div>
+          <span className="hidden sm:inline font-bold text-foreground tracking-tight">VisaHOBe</span>
         </div>
-      </motion.div>
 
-      {/* Urgent Actions — Swipeable */}
-      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }} className="mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground">Urgent Actions</h2>
-          <span className="text-xs text-muted-foreground">{demoNotifications.filter(n => !n.read).length} pending</span>
-        </div>
-        <SwipeableCards>
-          {demoNotifications.filter(n => !n.read).map((n) => {
-            const Icon = urgentTypeIcons[n.type] || Clock;
-            return (
-              <SwipeCard key={n.id} minWidth="260px">
-                <motion.div
-                  whileTap={{ scale: 0.97 }}
-                  className="card-elevated p-4 h-full cursor-pointer"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      n.type === 'urgent' ? 'bg-destructive/10 text-destructive' :
-                      n.type === 'warning' ? 'bg-amber-100 text-amber-700' :
-                      n.type === 'success' ? 'bg-emerald-50 text-emerald-600' :
-                      'bg-brand-blue/10 text-brand-blue'
-                    }`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{n.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
-                      <p className="text-[10px] text-muted-foreground/60 mt-1">
-                        {new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              </SwipeCard>
-            );
-          })}
-        </SwipeableCards>
-      </motion.div>
-
-      {/* Recent Workers — Swipeable on mobile */}
-      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.35, ease: [0.16, 1, 0.3, 1] }} className="mt-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground">Recent Workers</h2>
-          <Link to="/workers" className="text-xs text-brand-blue flex items-center gap-0.5 hover:underline">
-            View all <ChevronRight className="w-3 h-3" />
-          </Link>
-        </div>
-        <SwipeableCards>
-          {recentWorkers.map((w) => (
-            <SwipeCard key={w.id} minWidth="200px">
-              <Link to={`/workers/${w.id}`}>
-                <motion.div
-                  whileTap={{ scale: 0.96 }}
-                  className="card-elevated p-4 block h-full transition-shadow hover:shadow-lifted"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <span className="text-xs font-bold text-primary">{w.firstName[0]}{w.lastName[0]}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{w.firstName} {w.lastName}</p>
-                      <p className="text-[10px] text-muted-foreground font-mono">{w.internalId}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`status-${w.status} text-[10px] px-2 py-0.5 rounded-full font-medium`}>
-                      {statusLabels[w.status]}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                      <MapPin className="w-3 h-3" /> {countryFlags[w.destinationCountry]} {w.destinationCountry}
-                    </span>
-                  </div>
-                </motion.div>
-              </Link>
-            </SwipeCard>
-          ))}
-        </SwipeableCards>
-      </motion.div>
-
-      {/* Quick Actions */}
-      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.45, ease: [0.16, 1, 0.3, 1] }} className="mt-8">
-        <h2 className="text-sm font-semibold text-foreground mb-3">Quick Actions</h2>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-          {quickActions.map((action, i) => (
-            <motion.div
-              key={action.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5 + i * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        {/* Pill nav — desktop only */}
+        <div className="hidden md:flex items-center gap-1 bg-card border border-border rounded-full p-1">
+          {navTabs.map((t) => (
+            <Link
+              key={t.label}
+              to={t.path}
+              onClick={() => setActiveTab(t.label)}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                activeTab === t.label
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
-              <Link
-                to={action.path}
-                className="card-elevated p-4 flex flex-col items-center gap-2 transition-all duration-200 hover:shadow-lifted active:scale-[0.95]"
-              >
-                <div className={`w-10 h-10 rounded-xl ${action.color} flex items-center justify-center`}>
-                  <action.icon className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-medium text-foreground text-center">{action.label}</span>
-              </Link>
-            </motion.div>
+              {t.label}
+            </Link>
           ))}
         </div>
+
+        <div className="flex items-center gap-2">
+          <button className="relative w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition">
+            <Mail className="w-4 h-4 text-foreground" />
+            <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
+          </button>
+          <button className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition">
+            <Bell className="w-4 h-4 text-foreground" />
+          </button>
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/40 flex items-center justify-center text-xs font-bold text-white">
+            {owner.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+          </div>
+        </div>
       </motion.div>
 
-      {/* Project Progress — Swipeable */}
-      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.55, ease: [0.16, 1, 0.3, 1] }} className="mt-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground">Active Projects</h2>
-          <Link to="/projects" className="text-xs text-brand-blue flex items-center gap-0.5 hover:underline">
-            View all <ChevronRight className="w-3 h-3" />
-          </Link>
-        </div>
-        <SwipeableCards>
-          {demoProjects.filter(p => p.status !== 'completed').map((project) => {
-            const progress = project.targetWorkers > 0 ? (project.workerCount / project.targetWorkers) * 100 : 0;
-            return (
-              <SwipeCard key={project.id} minWidth="240px">
-                <Link to="/projects">
-                  <motion.div whileTap={{ scale: 0.97 }} className="card-elevated p-4 h-full">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-bold text-foreground">{project.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-3">
-                      <span>{countryFlags[project.country]} {project.country}</span>
-                      <span>•</span>
-                      <span className={`status-${project.status} px-1.5 py-0.5 rounded-full font-medium`}>
-                        {statusLabels[project.status]}
-                      </span>
-                    </div>
-                    <div className="mb-2">
-                      <div className="flex items-center justify-between text-[10px] mb-1">
-                        <span className="text-muted-foreground">Workers</span>
-                        <span className="font-medium text-foreground">{project.workerCount}/{project.targetWorkers}</span>
-                      </div>
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${progress}%` }}
-                          transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                          className="h-full rounded-full gradient-blue"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">{project.employer}</p>
-                  </motion.div>
-                </Link>
-              </SwipeCard>
-            );
-          })}
-        </SwipeableCards>
-      </motion.div>
-
-      {/* Recent Activity */}
-      <motion.div {...fade} transition={{ duration: 0.5, delay: 0.65, ease: [0.16, 1, 0.3, 1] }} className="mt-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
-          <Link to="/admin" className="text-xs text-brand-blue flex items-center gap-0.5 hover:underline">
-            View all <ChevronRight className="w-3 h-3" />
-          </Link>
-        </div>
-        <div className="card-elevated divide-y divide-border">
-          {demoActivityLogs.slice(0, 5).map((log, i) => (
-            <motion.div
-              key={log.id}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.7 + i * 0.05, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="flex items-start gap-3 px-4 py-3"
+      {/* Mobile pill nav */}
+      <div className="md:hidden -mx-3 px-3 mb-4 overflow-x-auto scrollbar-hide">
+        <div className="inline-flex items-center gap-1 bg-card border border-border rounded-full p-1">
+          {navTabs.map((t) => (
+            <Link
+              key={t.label}
+              to={t.path}
+              onClick={() => setActiveTab(t.label)}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
+                activeTab === t.label ? 'bg-foreground text-background' : 'text-muted-foreground'
+              }`}
             >
-              <div className="w-2 h-2 rounded-full bg-brand-blue mt-1.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-foreground font-medium">{log.action}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{log.details}</p>
-              </div>
-              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                {new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </span>
-            </motion.div>
+              {t.label}
+            </Link>
           ))}
         </div>
-      </motion.div>
-    </div>
-  );
-}
-
-function KpiCard({ kpi }: { kpi: typeof kpis[number] }) {
-  return (
-    <motion.div
-      whileTap={{ scale: 0.97 }}
-      className="card-elevated p-4 transition-shadow duration-300"
-    >
-      <div className={`w-9 h-9 rounded-xl ${kpi.color} flex items-center justify-center mb-3`}>
-        <kpi.icon className="w-[18px] h-[18px]" />
       </div>
-      <p className="text-2xl font-bold text-foreground tabular-nums">
-        {kpi.value}
-      </p>
-      <p className="text-xs text-muted-foreground mt-0.5">{kpi.label}</p>
-      <p className="text-[10px] text-brand-green font-medium mt-1">{kpi.trend}</p>
-    </motion.div>
+
+      {/* Stats + Activity row */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
+        {/* Stat cards 2x2 / 4-up */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {stats.map((s, i) => (
+            <motion.div
+              key={s.label}
+              {...fade}
+              transition={{ duration: 0.5, delay: 0.05 * i, ease: [0.16, 1, 0.3, 1] }}
+              className="card-elevated p-4 flex flex-col justify-between min-h-[170px]"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                  <s.icon className="w-5 h-5 text-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-3xl font-bold text-foreground tabular-nums leading-none">{s.value}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">{s.label}</p>
+                </div>
+              </div>
+              <Link
+                to={s.path}
+                className="mt-3 flex items-center justify-between bg-muted/60 hover:bg-muted rounded-full pl-4 pr-1 py-1 transition group"
+              >
+                <span className="text-xs font-medium text-foreground">{s.cta}</span>
+                <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center group-hover:scale-110 transition">
+                  <ChevronRight className="w-3.5 h-3.5 text-white" />
+                </span>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Activity panel */}
+        <motion.div
+          {...fade}
+          transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="card-elevated p-4 row-span-2 hidden lg:flex flex-col"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-foreground">Activity</h3>
+            <button className="text-[11px] text-muted-foreground border border-border rounded-full px-3 py-1 flex items-center gap-1">
+              Weekly <ChevronRight className="w-3 h-3 rotate-90" />
+            </button>
+          </div>
+          <div className="flex items-end gap-3 mb-2">
+            <p className="text-5xl font-bold text-foreground tabular-nums leading-none">
+              ${(totalRevenue / 1000).toFixed(0)}
+            </p>
+            <div className="pb-1">
+              <p className="text-[11px] text-muted-foreground">Revenue (K)</p>
+              <p className="text-[11px] text-emerald-400 flex items-center gap-1 mt-0.5">
+                <TrendingUp className="w-3 h-3" /> +5%
+              </p>
+            </div>
+          </div>
+          <div className="flex-1 flex items-end gap-2 mt-4 min-h-[180px]">
+            {activity.map((v, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                <div className="w-full relative h-full flex items-end">
+                  <div className="absolute inset-0 ubright-stripe rounded-md opacity-30" />
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${v}%` }}
+                    transition={{ delay: 0.3 + i * 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full rounded-md bg-primary relative z-10"
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground">{days[i]}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Main grid: schedule | recent course | (activity already on right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 mt-4">
+        {/* My Schedule */}
+        <motion.div
+          {...fade}
+          transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="card-elevated p-4"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-foreground">My Schedule</h3>
+            <button className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80">
+              <Plus className="w-3.5 h-3.5 text-foreground" />
+            </button>
+          </div>
+          <div className="bg-muted/40 rounded-xl p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-foreground">December 2026</span>
+              <div className="flex gap-1">
+                <button className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground">
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+                <button className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground">
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                <span key={d} className="text-[9px] text-muted-foreground text-center">{d}</span>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((d) => (
+                <button
+                  key={d}
+                  className={`aspect-square text-[10px] rounded-full flex items-center justify-center ${
+                    d === today ? 'bg-primary text-white font-semibold' : 'text-foreground hover:bg-muted'
+                  }`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-1">
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span>08:00 — 10:30</span>
+              <span className="bg-destructive/15 text-destructive px-2 py-0.5 rounded-full font-medium">● Live</span>
+            </div>
+            <p className="text-sm font-semibold text-foreground">Singapore Batch Briefing</p>
+            <span className="inline-block bg-emerald-500/15 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-medium">
+              Beginner
+            </span>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Mentor: <span className="text-foreground font-medium">Aiko Tanaka</span>
+            </p>
+          </div>
+
+          <Link
+            to="/projects"
+            className="mt-4 block bg-primary hover:bg-primary/90 text-white text-center text-sm font-medium rounded-full py-2.5 transition"
+          >
+            View All
+          </Link>
+        </motion.div>
+
+        {/* Recent Course / Documents */}
+        <motion.div
+          {...fade}
+          transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          className="card-elevated p-4"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-foreground">Recent Documents</h3>
+            <Link to="/drive" className="text-[11px] text-primary hover:underline">
+              View All
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {courses.map((c) => (
+              <motion.div
+                key={c.title}
+                whileHover={{ y: -2 }}
+                className="bg-muted/40 rounded-xl overflow-hidden border border-border/50"
+              >
+                <div className={`aspect-[4/3] relative flex items-center justify-center ${
+                  c.tone === 'red' ? 'bg-gradient-to-br from-red-900/40 to-red-700/20'
+                  : c.tone === 'amber' ? 'bg-gradient-to-br from-amber-900/40 to-orange-700/20'
+                  : 'bg-gradient-to-br from-rose-900/40 to-pink-700/20'
+                }`}>
+                  <Play className="w-10 h-10 text-white/80" />
+                </div>
+                <div className="p-3">
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
+                    {c.kind === 'Audio' ? <Mic className="w-3 h-3" /> : <Video className="w-3 h-3" />}
+                    {c.kind}
+                  </div>
+                  <p className="text-xs font-semibold text-foreground line-clamp-1">{c.title}</p>
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-2">
+                    <Download className="w-3 h-3" /> {c.count}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Activity panel — mobile/tablet only (below docs) */}
+          <div className="lg:hidden mt-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-foreground">Activity</h3>
+              <span className="text-[11px] text-muted-foreground">Weekly</span>
+            </div>
+            <div className="flex items-end gap-2 h-[140px]">
+              {activity.map((v, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full h-full flex items-end">
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${v}%` }}
+                      transition={{ delay: 0.3 + i * 0.05, duration: 0.6 }}
+                      className="w-full rounded-md bg-primary"
+                    />
+                  </div>
+                  <span className="text-[9px] text-muted-foreground">{days[i]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Bottom row — Ongoing Project / Mentors / Pending + Private */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        {/* Ongoing Project */}
+        <motion.div
+          {...fade}
+          transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="card-elevated p-4"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-foreground">Ongoing Project</h3>
+            <button className="w-7 h-7 rounded-full hover:bg-muted flex items-center justify-center">
+              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="bg-emerald-500/15 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-medium">Active</span>
+            <span className="bg-destructive/15 text-destructive text-[10px] px-2 py-0.5 rounded-full font-medium">● Live</span>
+          </div>
+          <p className="text-base font-bold text-foreground">{demoProjects[0].name}</p>
+          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+            {demoProjects[0].employer} — Singapore Marina Bay deployment with full processing for {demoProjects[0].targetWorkers} skilled workers.
+          </p>
+          <div className="mt-3 space-y-1.5 text-[11px]">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Batch</span>
+              <span className="text-primary font-medium">{demoProjects[0].batchCode}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Country</span>
+              <span className="text-foreground font-medium">{demoProjects[0].country}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Started</span>
+              <span className="text-foreground font-medium">{demoProjects[0].startDate}</span>
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: '68%' }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="bg-primary"
+              />
+              <div className="flex-1 ubright-stripe opacity-40" />
+            </div>
+            <div className="flex justify-between mt-1.5 text-[10px]">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Users className="w-3 h-3" /> {demoProjects[0].workerCount}/{demoProjects[0].targetWorkers}
+              </div>
+              <span className="text-foreground font-medium">68%</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* My Mentors / Team */}
+        <motion.div
+          {...fade}
+          transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="card-elevated p-4"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-foreground">My Team</h3>
+            <Link to="/partners" className="text-[11px] text-primary hover:underline">View All</Link>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] mb-3">
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Online
+            </span>
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-destructive" /> Offline
+            </span>
+          </div>
+          <div className="space-y-2.5">
+            {demoWorkers.slice(0, 4).map((w, i) => (
+              <div key={w.id} className="flex items-center gap-2.5">
+                <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-primary/40 to-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[10px] font-bold text-foreground">
+                    {w.firstName[0]}{w.lastName[0]}
+                  </span>
+                  <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${
+                    i % 2 === 0 ? 'bg-emerald-400' : 'bg-destructive'
+                  }`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {w.firstName} {w.lastName}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground truncate">{w.jobTitle}</p>
+                </div>
+                <button className="w-7 h-7 rounded-full bg-muted hover:bg-muted/70 flex items-center justify-center">
+                  <Mail className="w-3 h-3 text-foreground" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Pending + Private CTA */}
+        <div className="space-y-4">
+          <motion.div
+            {...fade}
+            transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="card-elevated p-4"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-foreground">Pending Tasks</h3>
+              <button className="w-7 h-7 rounded-full hover:bg-muted flex items-center justify-center">
+                <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground">4/8 completed</p>
+                <p className="text-sm font-semibold text-foreground">Visa Documentation Review</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            {...fade}
+            transition={{ duration: 0.5, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-2xl p-5 bg-primary text-white relative overflow-hidden"
+          >
+            <div className="absolute -right-6 -top-6 w-32 h-32 rounded-full border-[12px] border-white/15" />
+            <div className="absolute right-4 bottom-4 w-20 h-20 rounded-full border-[8px] border-white/15" />
+            <p className="text-[10px] uppercase tracking-widest font-medium opacity-80">Premium Service</p>
+            <h4 className="text-lg font-bold mt-2 leading-tight">
+              Elevate Your Deployments with Private Concierge
+            </h4>
+            <p className="text-xs opacity-85 mt-2 leading-relaxed">
+              Tailored 1-on-1 visa processing, dedicated agent, and white-glove document handling.
+            </p>
+            <Link
+              to="/agreements"
+              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold bg-white text-primary px-4 py-2 rounded-full hover:bg-white/90 transition"
+            >
+              Learn More <ChevronRight className="w-3 h-3" />
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+    </div>
   );
 }
