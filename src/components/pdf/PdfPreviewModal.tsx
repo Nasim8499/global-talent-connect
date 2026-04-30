@@ -125,8 +125,8 @@ export default function PdfPreviewModal({ open, onClose, title, pages }: PdfPrev
         </motion.div>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-auto bg-muted/50 p-4 flex items-start justify-center">
-          <div ref={pagesContainerRef}>
+        <div className="flex-1 overflow-auto bg-muted/50 p-3 sm:p-4 flex items-start justify-center">
+          <div ref={pagesContainerRef} className="w-full flex justify-center">
             {/* Hidden pages for PDF rendering */}
             <div className="hidden">
               {pages.map((page, i) => (
@@ -135,17 +135,36 @@ export default function PdfPreviewModal({ open, onClose, title, pages }: PdfPrev
                 </div>
               ))}
             </div>
-            {/* Visible current page */}
-            <motion.div
-              key={currentPage}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              ref={visiblePageRef}
-              className="bg-white shadow-2xl rounded-sm w-full max-w-[595px] min-h-[842px] relative overflow-hidden"
-            >
-              {pages[currentPage]}
-            </motion.div>
+            {/* Visible current page — responsive scaled wrapper */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentPage}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full max-w-[595px]"
+              >
+                <div
+                  className="relative w-full bg-white shadow-2xl rounded-md overflow-hidden mx-auto"
+                  style={{ aspectRatio: '595 / 842' }}
+                >
+                  <div
+                    ref={visiblePageRef}
+                    className="absolute top-0 left-0 origin-top-left"
+                    style={{
+                      width: '595px',
+                      height: '842px',
+                      transform: 'scale(var(--pdf-scale, 1))',
+                      transformOrigin: 'top left',
+                    }}
+                    data-pdf-visible
+                  >
+                    {pages[currentPage]}
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 
