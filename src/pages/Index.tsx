@@ -402,15 +402,15 @@ export default function Dashboard() {
       </div>
 
       {/* Document preview modal */}
-      {previewing && previewing.dataUrl && (
-        <DocumentViewer
-          isOpen={!!previewing}
-          onClose={() => setPreviewTile(null)}
-          fileName={previewing.caption || previewing.title}
-          fileType={previewing.kind === 'PDF' ? 'application/pdf' : 'image/*'}
-          fileUrl={previewing.dataUrl}
-        />
-      )}
+      <DocumentViewer
+        open={!!previewing && !!previewing.dataUrl}
+        onClose={() => setPreviewTile(null)}
+        file={previewing && previewing.dataUrl ? {
+          name: previewing.caption || previewing.title,
+          type: previewing.kind === 'PDF' ? 'pdf' : 'image',
+          url: previewing.dataUrl,
+        } : null}
+      />
     </div>
   );
 }
