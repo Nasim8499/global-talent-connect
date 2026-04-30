@@ -167,19 +167,20 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
-          <div className="flex-1 flex items-end gap-2 mt-4 min-h-[200px] h-[200px]">
+          <div className="flex items-end gap-2 mt-4 h-[200px]">
             {activity.map((v, i) => (
-              <div key={i} className="flex-1 h-full flex flex-col items-center gap-2">
-                <div className="w-full relative flex-1 flex items-end">
-                  <div className="absolute inset-0 ubright-stripe rounded-md opacity-30" />
+              <div key={i} className="flex-1 h-full flex flex-col items-center">
+                <div className="w-full flex-1 relative flex items-end overflow-hidden rounded-md">
+                  <div className="absolute inset-0 ubright-stripe opacity-30" />
                   <motion.div
                     initial={{ height: 0 }}
                     animate={{ height: `${v}%` }}
                     transition={{ delay: 0.3 + i * 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ minHeight: 4 }}
                     className="w-full rounded-md bg-primary relative z-10"
                   />
                 </div>
-                <span className="text-[10px] text-muted-foreground">{days[i]}</span>
+                <span className="text-[10px] text-muted-foreground mt-2">{days[i]}</span>
               </div>
             ))}
           </div>
