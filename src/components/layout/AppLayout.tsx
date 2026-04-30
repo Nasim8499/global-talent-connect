@@ -126,13 +126,23 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Page Content */}
         <div className="pb-24 md:pb-6 overflow-x-hidden">
-          {children}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border/50 shadow-lifted">
-        <div className="flex items-end justify-around px-2 pb-[env(safe-area-inset-bottom)]">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border shadow-lifted">
+        <div className="flex items-end justify-around px-2 pt-1 pb-[env(safe-area-inset-bottom)]">
           {bottomTabs.map((tab) =>
             tab.center ? (
               <Link
@@ -140,12 +150,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 to={tab.path}
                 className="flex flex-col items-center -mt-5"
               >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lifted transition-all duration-200 active:scale-95 ${
-                  isActive(tab.path) ? 'gradient-gold' : 'gradient-navy'
-                }`}>
-                  <tab.icon className="w-6 h-6 text-white" />
-                </div>
-                <span className={`text-[10px] mt-1 font-medium ${isActive(tab.path) ? 'text-foreground' : 'text-muted-foreground'}`}>
+                <motion.div
+                  whileTap={{ scale: 0.92 }}
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lifted transition-all duration-300 ${
+                    isActive(tab.path)
+                      ? 'bg-white'
+                      : 'bg-primary'
+                  }`}
+                >
+                  <tab.icon className={`w-6 h-6 transition-colors ${isActive(tab.path) ? 'text-primary' : 'text-white'}`} />
+                </motion.div>
+                <span className={`text-[10px] mt-1 font-medium transition-colors ${isActive(tab.path) ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {tab.label}
                 </span>
               </Link>
@@ -153,10 +168,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <Link
                 key={tab.path}
                 to={tab.path}
-                className="flex flex-col items-center py-2 px-3"
+                className="flex flex-col items-center py-2 px-3 relative"
               >
-                <tab.icon className={`w-5 h-5 transition-colors ${isActive(tab.path) ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className={`text-[10px] mt-1 font-medium ${isActive(tab.path) ? 'text-primary' : 'text-muted-foreground'}`}>
+                {isActive(tab.path) && (
+                  <motion.div
+                    layoutId="bottom-nav-pill"
+                    className="absolute inset-1 bg-white rounded-2xl"
+                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <tab.icon className={`w-5 h-5 relative z-10 transition-colors ${isActive(tab.path) ? 'text-primary' : 'text-muted-foreground'}`} />
+                <span className={`text-[10px] mt-1 font-medium relative z-10 transition-colors ${isActive(tab.path) ? 'text-primary' : 'text-muted-foreground'}`}>
                   {tab.label}
                 </span>
               </Link>
