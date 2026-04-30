@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
-  Award, Clock, BookOpen, CheckCircle2, ChevronRight, ChevronLeft,
-  Plus, MoreHorizontal, Mail, Bell, TrendingUp, Users,
+  ChevronRight, ChevronLeft, Plus, MoreHorizontal, Bell, Sparkles,
+  ShoppingCart, Eye, ArrowUpRight, Users, FileText, TrendingUp,
 } from 'lucide-react';
 import { demoWorkers, demoProjects, demoPayments, owner } from '@/data/demo';
 import { useState } from 'react';
@@ -20,202 +20,194 @@ const totalRevenue = demoPayments
   .filter((p) => p.type === 'revenue' || p.type === 'service_charge')
   .reduce((s, p) => s + p.amount, 0);
 
-const stats = [
-  { value: demoWorkers.filter((w) => w.status === 'completed' || w.status === 'deployed').length, label: 'Completed Deployments', cta: 'View Records', icon: Award, path: '/workers' },
-  { value: 180, label: 'Total Service Hours', cta: 'Service Report', icon: Clock, path: '/finance' },
-  { value: demoProjects.filter((p) => p.status !== 'completed').length, label: 'Currently Active', cta: 'Go to Projects', icon: BookOpen, path: '/projects' },
-  { value: demoWorkers.filter((w) => w.status === 'approved').length, label: 'Approval Success', cta: 'Review Items', icon: CheckCircle2, path: '/workers' },
-];
+const lastWeekDelta = 33572;
 
-const navTabs = [
-  { label: 'Assignments', path: '/auto' },
-  { label: 'Dashboard', path: '/' },
-  { label: 'Workers', path: '/workers' },
-  { label: 'Projects', path: '/projects' },
-];
+// Bar chart data — turnover vs ads cost (matches reference)
+const chartDays = [12, 13, 14, 15, 16];
+const turnover = [55, 80, 95, 70, 45];
+const adsCost = [30, 50, 60, 42, 28];
 
-// Activity bars (Mon-Sun)
-const activity = [38, 52, 28, 70, 36, 95, 88];
-const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const calendarDays = Array.from({ length: 31 }, (_, i) => i + 1);
-const today = 1;
+const today = 14;
+
+const reports = [
+  {
+    id: 'orders',
+    label: 'Total Orders',
+    value: demoWorkers.length * 112 + 3,
+    icon: ShoppingCart,
+    tone: 'orange',
+    path: '/workers',
+  },
+  {
+    id: 'views',
+    label: 'Product Views',
+    value: '10.580',
+    icon: Eye,
+    tone: 'teal',
+    path: '/projects',
+  },
+];
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState('Dashboard');
   const { tiles, uploadToTile, clearTile, addTile } = useDashboardTiles();
   const [previewTile, setPreviewTile] = useState<string | null>(null);
   const previewing = tiles.find((t) => t.id === previewTile);
 
   return (
     <div className="px-3 sm:px-5 lg:px-8 py-4 lg:py-6 max-w-[1500px] mx-auto">
-      {/* Top bar — logo + pill nav + actions */}
+      {/* Header */}
       <motion.div
         {...fade}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="flex items-center justify-between gap-3 mb-5"
       >
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-            <span className="text-white font-black text-sm">V</span>
-          </div>
-          <span className="hidden sm:inline font-bold text-foreground tracking-tight">VisaHOBe</span>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Store Insights</h1>
+          <p className="text-xs text-white/60 mt-1">Welcome back, {owner.name.split(' ')[0]}</p>
         </div>
-
-        {/* Pill nav — desktop only */}
-        <div className="hidden md:flex items-center gap-1 bg-card border border-border rounded-full p-1">
-          {navTabs.map((t) => (
-            <Link
-              key={t.label}
-              to={t.path}
-              onClick={() => setActiveTab(t.label)}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                activeTab === t.label
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
-
         <div className="flex items-center gap-2">
-          <button className="relative w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition">
-            <Mail className="w-4 h-4 text-foreground" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
+          <button className="relative w-11 h-11 rounded-full frosted flex items-center justify-center hover:bg-white/20 transition">
+            <Bell className="w-4 h-4 text-white" />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-destructive rounded-full" />
           </button>
-          <button className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition">
-            <Bell className="w-4 h-4 text-foreground" />
-          </button>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/40 flex items-center justify-center text-xs font-bold text-white">
+          <div className="w-11 h-11 rounded-full gradient-gold flex items-center justify-center text-xs font-bold text-primary-foreground">
             {owner.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
           </div>
         </div>
       </motion.div>
 
-      {/* Mobile pill nav */}
-      <div className="md:hidden -mx-3 px-3 mb-4 overflow-x-auto scrollbar-hide">
-        <div className="inline-flex items-center gap-1 bg-card border border-border rounded-full p-1">
-          {navTabs.map((t) => (
-            <Link
-              key={t.label}
-              to={t.path}
-              onClick={() => setActiveTab(t.label)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                activeTab === t.label ? 'bg-foreground text-background' : 'text-muted-foreground'
-              }`}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats + Activity row */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 items-start">
-        {/* Stat cards 2x2 / 4-up */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 self-start">
-          {stats.map((s, i) => (
-            <motion.div
-              key={s.label}
-              {...fade}
-              transition={{ duration: 0.5, delay: 0.05 * i, ease: [0.16, 1, 0.3, 1] }}
-              className="card-elevated p-4 flex flex-col justify-between min-h-[170px]"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                  <s.icon className="w-5 h-5 text-foreground" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-3xl font-bold text-foreground tabular-nums leading-none">{s.value}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">{s.label}</p>
-                </div>
-              </div>
-              <Link
-                to={s.path}
-                className="mt-3 flex items-center justify-between bg-muted/60 hover:bg-muted rounded-full pl-4 pr-1 py-1 transition group"
-              >
-                <span className="text-xs font-medium text-foreground">{s.cta}</span>
-                <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center group-hover:scale-110 transition">
-                  <ChevronRight className="w-3.5 h-3.5 text-white" />
-                </span>
-              </Link>
-            </motion.div>
-          ))}
+      {/* HERO — Revenue + Chart card (reference style) */}
+      <motion.div
+        {...fade}
+        transition={{ duration: 0.6, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+        className="frosted rounded-[28px] p-4 sm:p-5 mb-4"
+      >
+        {/* Inner white revenue card */}
+        <div className="frosted-light rounded-2xl px-5 py-4 text-center">
+          <p className="text-xs font-medium text-slate-500">Total Revenue</p>
+          <p className="text-3xl sm:text-4xl font-bold tracking-tight mt-1 text-slate-900 tabular-nums">
+            ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <span className="bg-emerald-100 text-emerald-700 text-[11px] font-semibold px-2 py-0.5 rounded-full">+20%</span>
+            <span className="text-[11px] text-slate-500">+${lastWeekDelta.toLocaleString()} compared to last week</span>
+          </div>
         </div>
 
-        {/* Activity panel */}
-        <motion.div
-          {...fade}
-          transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="card-elevated p-4 hidden lg:flex flex-col min-h-[360px]"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-foreground">Activity</h3>
-            <button className="text-[11px] text-muted-foreground border border-border rounded-full px-3 py-1 flex items-center gap-1">
-              Weekly <ChevronRight className="w-3 h-3 rotate-90" />
-            </button>
-          </div>
-          <div className="flex items-end gap-3 mb-2">
-            <p className="text-5xl font-bold text-foreground tabular-nums leading-none">
-              ${(totalRevenue / 1000).toFixed(0)}
-            </p>
-            <div className="pb-1">
-              <p className="text-[11px] text-muted-foreground">Revenue (K)</p>
-              <p className="text-[11px] text-emerald-400 flex items-center gap-1 mt-0.5">
-                <TrendingUp className="w-3 h-3" /> +5%
-              </p>
-            </div>
-          </div>
-          <div className="flex items-end gap-2 mt-4 h-[200px]">
-            {activity.map((v, i) => (
-              <div key={i} className="flex-1 h-full flex flex-col items-center">
-                <div className="w-full flex-1 relative flex items-end overflow-hidden rounded-md">
-                  <div className="absolute inset-0 ubright-stripe opacity-30" />
+        {/* Chart + legend + Analyze */}
+        <div className="mt-5 flex items-end gap-4">
+          <div className="flex items-end gap-2 sm:gap-3 h-[110px] flex-1">
+            {chartDays.map((d, i) => (
+              <div key={d} className="flex-1 flex flex-col items-center justify-end gap-1.5">
+                <div className="w-full flex items-end gap-1 h-[90px]">
                   <motion.div
                     initial={{ height: 0 }}
-                    animate={{ height: `${v}%` }}
-                    transition={{ delay: 0.3 + i * 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    animate={{ height: `${turnover[i]}%` }}
+                    transition={{ delay: 0.2 + i * 0.07, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex-1 rounded-t-md bg-cyan-300/90"
                     style={{ minHeight: 4 }}
-                    className="w-full rounded-md bg-primary relative z-10"
+                  />
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${adsCost[i]}%` }}
+                    transition={{ delay: 0.25 + i * 0.07, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex-1 rounded-t-md bg-white/30"
+                    style={{ minHeight: 4 }}
                   />
                 </div>
-                <span className="text-[10px] text-muted-foreground mt-2">{days[i]}</span>
+                <span className="text-[10px] text-white/60">{d}</span>
               </div>
             ))}
           </div>
-        </motion.div>
-      </div>
 
-      {/* Main grid: schedule | recent course | (activity already on right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 mt-4">
+          <div className="flex flex-col items-end gap-2 pb-5">
+            <div className="space-y-1 text-right">
+              <div className="flex items-center gap-1.5 text-[11px] text-white/85">
+                <span className="w-2 h-2 rounded-full bg-cyan-300" /> Turnover
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-white/60">
+                <span className="w-2 h-2 rounded-full bg-white/40" /> Ads cost
+              </div>
+            </div>
+            <Link
+              to="/finance"
+              className="pill-dark px-4 py-2 text-xs font-semibold flex items-center gap-1.5 hover:scale-[1.03] active:scale-95 transition"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
+              Analyze
+            </Link>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* REPORTS frosted card */}
+      <motion.div
+        {...fade}
+        transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+        className="frosted-light rounded-[28px] p-5 mb-4"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-slate-900">Reports</h3>
+          <Link to="/finance" className="text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1">
+            View all <ChevronRight className="w-3 h-3" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {reports.map((r, i) => (
+            <Link
+              key={r.id}
+              to={r.path}
+              className="relative bg-white rounded-2xl p-4 overflow-hidden border border-slate-100 hover:shadow-lg transition group"
+            >
+              {/* big watermark icon */}
+              <r.icon
+                className={`absolute -top-2 -right-3 w-24 h-24 ${
+                  r.tone === 'orange' ? 'text-orange-100' : 'text-teal-100'
+                }`}
+              />
+              <div
+                className={`relative w-11 h-11 rounded-full flex items-center justify-center mb-8 ${
+                  r.tone === 'orange'
+                    ? 'bg-gradient-to-br from-orange-400 to-orange-500'
+                    : 'bg-gradient-to-br from-teal-400 to-teal-500'
+                }`}
+              >
+                <r.icon className="w-5 h-5 text-white" />
+              </div>
+              <p className="relative text-[11px] text-slate-500 font-medium">{r.label}</p>
+              <p className="relative text-2xl font-bold text-slate-900 mt-0.5 tabular-nums">{r.value}</p>
+            </Link>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* CONTENT GRID — keeps existing modules */}
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
         {/* My Schedule */}
         <motion.div
           {...fade}
-          transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="card-elevated p-4"
+          transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          className="frosted rounded-[24px] p-4"
         >
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground">My Schedule</h3>
-            <button className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80">
-              <Plus className="w-3.5 h-3.5 text-foreground" />
+            <h3 className="text-sm font-semibold text-white">My Schedule</h3>
+            <button className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+              <Plus className="w-3.5 h-3.5 text-white" />
             </button>
           </div>
-          <div className="bg-muted/40 rounded-xl p-3">
+          <div className="bg-white/8 rounded-2xl p-3 border border-white/10">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-foreground">December 2026</span>
+              <span className="text-xs font-medium text-white">December 2026</span>
               <div className="flex gap-1">
-                <button className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground">
-                  <ChevronLeft className="w-3 h-3" />
-                </button>
-                <button className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground">
-                  <ChevronRight className="w-3 h-3" />
-                </button>
+                <button className="w-5 h-5 rounded text-white/60 hover:text-white"><ChevronLeft className="w-3 h-3" /></button>
+                <button className="w-5 h-5 rounded text-white/60 hover:text-white"><ChevronRight className="w-3 h-3" /></button>
               </div>
             </div>
             <div className="grid grid-cols-7 gap-1 mb-1">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                <span key={d} className="text-[9px] text-muted-foreground text-center">{d}</span>
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                <span key={i} className="text-[9px] text-white/50 text-center">{d}</span>
               ))}
             </div>
             <div className="grid grid-cols-7 gap-1">
@@ -223,7 +215,7 @@ export default function Dashboard() {
                 <button
                   key={d}
                   className={`aspect-square text-[10px] rounded-full flex items-center justify-center ${
-                    d === today ? 'bg-primary text-white font-semibold' : 'text-foreground hover:bg-muted'
+                    d === today ? 'bg-cyan-300 text-slate-900 font-bold' : 'text-white/85 hover:bg-white/10'
                   }`}
                 >
                   {d}
@@ -233,45 +225,40 @@ export default function Dashboard() {
           </div>
 
           <div className="mt-4 space-y-1">
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-2 text-[10px] text-white/60">
               <span>08:00 — 10:30</span>
-              <span className="bg-destructive/15 text-destructive px-2 py-0.5 rounded-full font-medium">● Live</span>
+              <span className="bg-destructive/20 text-destructive px-2 py-0.5 rounded-full font-medium">● Live</span>
             </div>
-            <p className="text-sm font-semibold text-foreground">Singapore Batch Briefing</p>
-            <span className="inline-block bg-emerald-500/15 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-medium">
-              Beginner
-            </span>
-            <p className="text-[11px] text-muted-foreground mt-2">
-              Mentor: <span className="text-foreground font-medium">Aiko Tanaka</span>
+            <p className="text-sm font-semibold text-white">Singapore Batch Briefing</p>
+            <p className="text-[11px] text-white/60 mt-2">
+              Mentor: <span className="text-white font-medium">Aiko Tanaka</span>
             </p>
           </div>
 
           <Link
             to="/projects"
-            className="mt-4 block bg-primary hover:bg-primary/90 text-white text-center text-sm font-medium rounded-full py-2.5 transition"
+            className="mt-4 block bg-cyan-300 hover:bg-cyan-200 text-slate-900 text-center text-sm font-semibold rounded-full py-2.5 transition"
           >
             View All
           </Link>
         </motion.div>
 
-        {/* Recent Course / Documents */}
+        {/* My Documents (uploadable tiles) */}
         <motion.div
           {...fade}
-          transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="card-elevated p-4"
+          transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="frosted rounded-[24px] p-4"
         >
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground">My Documents</h3>
+            <h3 className="text-sm font-semibold text-white">My Documents</h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={addTile}
-                className="text-[11px] text-foreground bg-muted hover:bg-muted/70 rounded-full px-3 py-1 flex items-center gap-1 transition"
+                className="text-[11px] text-white bg-white/10 hover:bg-white/20 rounded-full px-3 py-1 flex items-center gap-1 transition"
               >
                 <Plus className="w-3 h-3" /> Add tile
               </button>
-              <Link to="/drive" className="text-[11px] text-primary hover:underline">
-                View All
-              </Link>
+              <Link to="/drive" className="text-[11px] text-cyan-300 hover:underline">View All</Link>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -283,199 +270,147 @@ export default function Dashboard() {
                   await uploadToTile(tile.id, file);
                   toast.success(`Uploaded ${file.name}`);
                 }}
-                onClear={() => {
-                  clearTile(tile.id);
-                  toast('Tile cleared');
-                }}
+                onClear={() => { clearTile(tile.id); toast('Tile cleared'); }}
                 onPreview={() => setPreviewTile(tile.id)}
               />
             ))}
           </div>
-
-          {/* Activity panel — mobile/tablet only (below docs) */}
-          <div className="lg:hidden mt-4 pt-4 border-t border-border">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-foreground">Activity</h3>
-              <span className="text-[11px] text-muted-foreground">Weekly</span>
-            </div>
-            <div className="flex items-end gap-2 h-[140px]">
-              {activity.map((v, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full h-full flex items-end">
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: `${v}%` }}
-                      transition={{ delay: 0.3 + i * 0.05, duration: 0.6 }}
-                      className="w-full rounded-md bg-primary"
-                    />
-                  </div>
-                  <span className="text-[9px] text-muted-foreground">{days[i]}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </motion.div>
       </div>
 
-      {/* Bottom row — Ongoing Project / Mentors / Pending + Private */}
+      {/* BOTTOM ROW — Ongoing project + Team + Quick stats (kept content) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
         {/* Ongoing Project */}
         <motion.div
           {...fade}
-          transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="card-elevated p-4"
+          transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="frosted rounded-[24px] p-4"
         >
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-foreground">Ongoing Project</h3>
-            <button className="w-7 h-7 rounded-full hover:bg-muted flex items-center justify-center">
-              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-white">Ongoing Project</h3>
+            <button className="w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center">
+              <MoreHorizontal className="w-4 h-4 text-white/60" />
             </button>
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="bg-emerald-500/15 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-medium">Active</span>
-            <span className="bg-destructive/15 text-destructive text-[10px] px-2 py-0.5 rounded-full font-medium">● Live</span>
+            <span className="bg-emerald-400/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-medium">Active</span>
+            <span className="bg-destructive/20 text-destructive text-[10px] px-2 py-0.5 rounded-full font-medium">● Live</span>
           </div>
-          <p className="text-base font-bold text-foreground">{demoProjects[0].name}</p>
-          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-            {demoProjects[0].employer} — Singapore Marina Bay deployment with full processing for {demoProjects[0].targetWorkers} skilled workers.
+          <p className="text-base font-bold text-white">{demoProjects[0].name}</p>
+          <p className="text-xs text-white/60 mt-1.5 leading-relaxed">
+            {demoProjects[0].employer} — Marina Bay deployment, {demoProjects[0].targetWorkers} skilled workers.
           </p>
           <div className="mt-3 space-y-1.5 text-[11px]">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Batch</span>
-              <span className="text-primary font-medium">{demoProjects[0].batchCode}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Country</span>
-              <span className="text-foreground font-medium">{demoProjects[0].country}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Started</span>
-              <span className="text-foreground font-medium">{demoProjects[0].startDate}</span>
-            </div>
+            <div className="flex justify-between"><span className="text-white/55">Batch</span><span className="text-cyan-300 font-medium">{demoProjects[0].batchCode}</span></div>
+            <div className="flex justify-between"><span className="text-white/55">Country</span><span className="text-white font-medium">{demoProjects[0].country}</span></div>
           </div>
           <div className="mt-3">
-            <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: '68%' }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-primary"
+                className="h-full bg-cyan-300"
               />
-              <div className="flex-1 ubright-stripe opacity-40" />
             </div>
             <div className="flex justify-between mt-1.5 text-[10px]">
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <div className="flex items-center gap-1 text-white/60">
                 <Users className="w-3 h-3" /> {demoProjects[0].workerCount}/{demoProjects[0].targetWorkers}
               </div>
-              <span className="text-foreground font-medium">68%</span>
+              <span className="text-white font-medium">68%</span>
             </div>
           </div>
         </motion.div>
 
-        {/* My Mentors / Team */}
+        {/* My Team */}
         <motion.div
           {...fade}
-          transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="card-elevated p-4"
+          transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="frosted rounded-[24px] p-4"
         >
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground">My Team</h3>
-            <Link to="/partners" className="text-[11px] text-primary hover:underline">View All</Link>
+            <h3 className="text-sm font-semibold text-white">My Team</h3>
+            <Link to="/workers" className="text-[11px] text-cyan-300 hover:underline">View All</Link>
           </div>
-          <div className="flex items-center gap-3 text-[11px] mb-3">
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Online
-            </span>
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-destructive" /> Offline
-            </span>
-          </div>
-          <div className="space-y-2.5">
-            {demoWorkers.slice(0, 4).map((w, i) => (
-              <div key={w.id} className="flex items-center gap-2.5">
-                <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-primary/40 to-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[10px] font-bold text-foreground">
-                    {w.firstName[0]}{w.lastName[0]}
-                  </span>
-                  <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${
-                    i % 2 === 0 ? 'bg-emerald-400' : 'bg-destructive'
-                  }`} />
+          <div className="space-y-2">
+            {demoWorkers.slice(0, 4).map((w) => (
+              <div key={w.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/8 transition">
+                <div className="w-9 h-9 rounded-full gradient-gold flex items-center justify-center text-[11px] font-bold text-primary-foreground">
+                  {w.firstName[0]}{w.lastName[0]}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">
-                    {w.firstName} {w.lastName}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground truncate">{w.jobTitle}</p>
+                  <p className="text-xs font-semibold text-white truncate">{w.firstName} {w.lastName}</p>
+                  <p className="text-[10px] text-white/55 truncate">{w.jobTitle} • {w.destinationCountry}</p>
                 </div>
-                <button className="w-7 h-7 rounded-full bg-muted hover:bg-muted/70 flex items-center justify-center">
-                  <Mail className="w-3 h-3 text-foreground" />
-                </button>
+                <span className={`status-${w.status} text-[9px] px-2 py-0.5 rounded-full font-medium`}>
+                  {w.status.replace('_', ' ')}
+                </span>
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* Pending + Private CTA */}
-        <div className="space-y-4">
-          <motion.div
-            {...fade}
-            transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="card-elevated p-4"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-foreground">Pending Tasks</h3>
-              <button className="w-7 h-7 rounded-full hover:bg-muted flex items-center justify-center">
-                <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-white" />
+        {/* Quick stats */}
+        <motion.div
+          {...fade}
+          transition={{ duration: 0.5, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="frosted rounded-[24px] p-4"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-white">Quick Stats</h3>
+            <TrendingUp className="w-4 h-4 text-cyan-300" />
+          </div>
+          <div className="space-y-3">
+            <Link to="/agreements" className="flex items-center justify-between bg-white/8 hover:bg-white/12 rounded-2xl p-3 transition">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-cyan-300/20 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-cyan-300" />
+                </div>
+                <div>
+                  <p className="text-xs text-white/60">Active Agreements</p>
+                  <p className="text-sm font-bold text-white">5 documents</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[11px] text-muted-foreground">4/8 completed</p>
-                <p className="text-sm font-semibold text-foreground">Visa Documentation Review</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            {...fade}
-            transition={{ duration: 0.5, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-2xl p-5 bg-primary text-white relative overflow-hidden"
-          >
-            <div className="absolute -right-6 -top-6 w-32 h-32 rounded-full border-[12px] border-white/15" />
-            <div className="absolute right-4 bottom-4 w-20 h-20 rounded-full border-[8px] border-white/15" />
-            <p className="text-[10px] uppercase tracking-widest font-medium opacity-80">Premium Service</p>
-            <h4 className="text-lg font-bold mt-2 leading-tight">
-              Elevate Your Deployments with Private Concierge
-            </h4>
-            <p className="text-xs opacity-85 mt-2 leading-relaxed">
-              Tailored 1-on-1 visa processing, dedicated agent, and white-glove document handling.
-            </p>
-            <Link
-              to="/agreements"
-              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold bg-white text-primary px-4 py-2 rounded-full hover:bg-white/90 transition"
-            >
-              Learn More <ChevronRight className="w-3 h-3" />
+              <ArrowUpRight className="w-4 h-4 text-white/60" />
             </Link>
-          </motion.div>
-        </div>
+            <Link to="/projects" className="flex items-center justify-between bg-white/8 hover:bg-white/12 rounded-2xl p-3 transition">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-orange-400/20 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-orange-300" />
+                </div>
+                <div>
+                  <p className="text-xs text-white/60">Workers In Pipeline</p>
+                  <p className="text-sm font-bold text-white">{demoWorkers.filter(w => w.status !== 'completed').length} workers</p>
+                </div>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-white/60" />
+            </Link>
+            <Link to="/finance" className="flex items-center justify-between bg-white/8 hover:bg-white/12 rounded-2xl p-3 transition">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-emerald-400/20 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-emerald-300" />
+                </div>
+                <div>
+                  <p className="text-xs text-white/60">This Month</p>
+                  <p className="text-sm font-bold text-white">+SGD 24,000</p>
+                </div>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-white/60" />
+            </Link>
+          </div>
+        </motion.div>
       </div>
 
-      <DocumentViewer
-        open={!!previewing}
-        onClose={() => setPreviewTile(null)}
-        file={
-          previewing && previewing.dataUrl
-            ? {
-                name: previewing.caption || previewing.title,
-                type: previewing.kind === 'PDF' ? 'pdf' : 'image',
-                url: previewing.dataUrl,
-              }
-            : null
-        }
-      />
+      {/* Document preview modal */}
+      {previewing && previewing.dataUrl && (
+        <DocumentViewer
+          isOpen={!!previewing}
+          onClose={() => setPreviewTile(null)}
+          fileName={previewing.caption || previewing.title}
+          fileType={previewing.kind === 'PDF' ? 'application/pdf' : 'image/*'}
+          fileUrl={previewing.dataUrl}
+        />
+      )}
     </div>
   );
 }
