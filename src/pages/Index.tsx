@@ -261,36 +261,34 @@ export default function Dashboard() {
           className="card-elevated p-4"
         >
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground">Recent Documents</h3>
-            <Link to="/drive" className="text-[11px] text-primary hover:underline">
-              View All
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {courses.map((c) => (
-              <motion.div
-                key={c.title}
-                whileHover={{ y: -2 }}
-                className="bg-muted/40 rounded-xl overflow-hidden border border-border/50"
+            <h3 className="text-sm font-semibold text-foreground">My Documents</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={addTile}
+                className="text-[11px] text-foreground bg-muted hover:bg-muted/70 rounded-full px-3 py-1 flex items-center gap-1 transition"
               >
-                <div className={`aspect-[4/3] relative flex items-center justify-center ${
-                  c.tone === 'red' ? 'bg-gradient-to-br from-red-900/40 to-red-700/20'
-                  : c.tone === 'amber' ? 'bg-gradient-to-br from-amber-900/40 to-orange-700/20'
-                  : 'bg-gradient-to-br from-rose-900/40 to-pink-700/20'
-                }`}>
-                  <Play className="w-10 h-10 text-white/80" />
-                </div>
-                <div className="p-3">
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
-                    {c.kind === 'Audio' ? <Mic className="w-3 h-3" /> : <Video className="w-3 h-3" />}
-                    {c.kind}
-                  </div>
-                  <p className="text-xs font-semibold text-foreground line-clamp-1">{c.title}</p>
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-2">
-                    <Download className="w-3 h-3" /> {c.count}
-                  </div>
-                </div>
-              </motion.div>
+                <Plus className="w-3 h-3" /> Add tile
+              </button>
+              <Link to="/drive" className="text-[11px] text-primary hover:underline">
+                View All
+              </Link>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {tiles.map((tile) => (
+              <DashboardTile
+                key={tile.id}
+                tile={tile}
+                onUpload={async (file) => {
+                  await uploadToTile(tile.id, file);
+                  toast.success(`Uploaded ${file.name}`);
+                }}
+                onClear={() => {
+                  clearTile(tile.id);
+                  toast('Tile cleared');
+                }}
+                onPreview={() => setPreviewTile(tile.id)}
+              />
             ))}
           </div>
 
