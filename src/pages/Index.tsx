@@ -148,7 +148,7 @@ export default function Dashboard() {
         <motion.div
           {...fade}
           transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="card-elevated p-4 row-span-2 hidden lg:flex flex-col"
+          className="card-elevated p-4 hidden lg:flex flex-col min-h-[360px]"
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-foreground">Activity</h3>
