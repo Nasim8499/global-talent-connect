@@ -82,14 +82,15 @@ export default function Workers() {
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setShowCountryMenu(!showCountryMenu)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+            className={`flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-2xl text-xs font-medium transition-all ${
               countryFilter !== 'all'
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'bg-card border border-border/50 text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Globe className="w-3.5 h-3.5" />
-            <span>{activeCountry?.flag} {activeCountry?.label}</span>
+            <span className="text-xl leading-none">{activeCountry?.flag}</span>
+            <span>{activeCountry?.label}</span>
+            <Globe className="w-3 h-3 opacity-60" />
           </motion.button>
 
           {/* Country Dropdown */}
@@ -121,7 +122,7 @@ export default function Workers() {
                           countryFilter === c.code ? 'bg-primary/5 text-primary font-medium' : 'text-foreground hover:bg-muted'
                         }`}
                       >
-                        <span className="text-base">{c.flag}</span>
+                        <span className="text-2xl leading-none">{c.flag}</span>
                         <span className="flex-1 text-left">{c.label}</span>
                         <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{count}</span>
                       </motion.button>
@@ -210,9 +211,10 @@ export default function Workers() {
           >
             <button
               onClick={() => setCountryFilter('all')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-blue/10 text-brand-blue text-xs font-medium"
+              className="inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-brand-blue/10 text-brand-blue text-xs font-medium"
             >
-              {activeCountry?.flag} {activeCountry?.label} • Clear
+              <span className="text-lg leading-none">{activeCountry?.flag}</span>
+              {activeCountry?.label} • Clear
             </button>
           </motion.div>
         )}
@@ -253,7 +255,8 @@ export default function Workers() {
                       <Briefcase className="w-3 h-3" />{worker.jobTitle}
                     </span>
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="w-3 h-3" />{countryFlags[worker.destinationCountry] || ''} {worker.destinationCountry}
+                      <span className="text-base leading-none">{countryFlags[worker.destinationCountry] || ''}</span>
+                      {worker.destinationCountry}
                     </span>
                   </div>
                   <p className="text-[10px] text-muted-foreground/60 mt-0.5 font-mono">{worker.internalId}</p>
