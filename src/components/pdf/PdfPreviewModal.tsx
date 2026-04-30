@@ -1,5 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
-import { X, Download, Printer, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
