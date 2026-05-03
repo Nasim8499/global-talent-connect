@@ -19,6 +19,7 @@ import Settings from "@/pages/Settings";
 import Owners from "@/pages/Owners";
 import Partners from "@/pages/Partners";
 import Drive from "@/pages/Drive";
+import DevOverflow from "@/pages/DevOverflow";
 import NotFound from "@/pages/NotFound";
 import OverflowGuard from "@/components/OverflowGuard";
 import OverflowReport from "@/components/OverflowReport";
@@ -54,6 +55,7 @@ function AppRoutes() {
       <Route path="/owners" element={<ProtectedRoute><Owners /></ProtectedRoute>} />
       <Route path="/partners" element={<ProtectedRoute><Partners /></ProtectedRoute>} />
       <Route path="/drive" element={<ProtectedRoute><Drive /></ProtectedRoute>} />
+      {import.meta.env.DEV && <Route path="/dev/overflow" element={<ProtectedRoute><DevOverflow /></ProtectedRoute>} />}
       <Route path="*" element={<NotFound />} />
     </Routes>
     </>
