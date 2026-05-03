@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth, roleHomePath } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import DigitalBackdrop from '@/components/DigitalBackdrop';
 
 type Mode = 'signin' | 'signup';
 
