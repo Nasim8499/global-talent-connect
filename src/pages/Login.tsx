@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Globe, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Globe, Loader2, AlertCircle } from 'lucide-react';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth, roleHomePath } from '@/contexts/AuthContext';
@@ -10,6 +11,26 @@ import { toast } from 'sonner';
 import DigitalBackdrop from '@/components/DigitalBackdrop';
 
 type Mode = 'signin' | 'signup';
+
+const baseSchema = {
+  email: z.string().trim().toLowerCase()
+    .min(1, 'Email is required')
+    .email('Enter a valid email address')
+    .max(255, 'Email must be under 255 characters'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(72, 'Password must be under 72 characters')
+    .regex(/[A-Za-z]/, 'Password must include a letter')
+    .regex(/[0-9]/, 'Password must include a number'),
+};
+
+const signinSchema = z.object(baseSchema);
+const signupSchema = z.object({
+  ...baseSchema,
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(80, 'Name must be under 80 characters'),
+});
+
+type FieldErrors = { email?: string; password?: string; name?: string; form?: string };
 
 export default function Login() {
   const navigate = useNavigate();
@@ -20,6 +41,36 @@ export default function Login() {
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean; name?: boolean }>({});
+
+  const passwordScore = (() => {
+    let s = 0;
+    if (password.length >= 8) s++;
+    if (/[A-Z]/.test(password)) s++;
+    if (/[0-9]/.test(password)) s++;
+    if (/[^A-Za-z0-9]/.test(password)) s++;
+    return s;
+  })();
+  const strengthLabel = ['Too weak', 'Weak', 'Fair', 'Strong', 'Excellent'][passwordScore];
+  const strengthColor = ['bg-destructive', 'bg-destructive', 'bg-amber-500', 'bg-emerald-500', 'bg-emerald-500'][passwordScore];
+
+  const validate = (): FieldErrors => {
+    const schema = mode === 'signup' ? signupSchema : signinSchema;
+    const result = schema.safeParse({ email, password, ...(mode === 'signup' ? { name } : {}) });
+    if (result.success) return {};
+    const next: FieldErrors = {};
+    for (const issue of result.error.issues) {
+      const k = issue.path[0] as keyof FieldErrors;
+      if (k && !next[k]) next[k] = issue.message;
+    }
+    return next;
+  };
+
+  const validateField = (field: 'email' | 'password' | 'name') => {
+    const next = validate();
+    setErrors((prev) => ({ ...prev, [field]: next[field], form: undefined }));
+  };
 
   const fetchRoleAndRedirect = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -32,23 +83,45 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    const next = validate();
+    setTouched({ email: true, password: true, name: mode === 'signup' });
+    if (Object.keys(next).length) {
+      setErrors(next);
+      return;
+    }
+    setErrors({});
     setLoading(true);
     try {
       if (mode === 'signin') {
-        const { error } = await signIn(email, password);
-        if (error) { toast.error(error); return; }
+        const { error } = await signIn(email.trim().toLowerCase(), password);
+        if (error) {
+          const msg = /invalid|credentials/i.test(error) ? 'Incorrect email or password.' : error;
+          setErrors({ form: msg });
+          toast.error(msg);
+          return;
+        }
         toast.success('Welcome back');
         await fetchRoleAndRedirect();
       } else {
-        const { error } = await signUp(email, password, name);
-        if (error) { toast.error(error); return; }
+        const { error } = await signUp(email.trim().toLowerCase(), password, name.trim());
+        if (error) {
+          const msg = /registered|exists/i.test(error) ? 'An account with this email already exists.' : error;
+          setErrors({ form: msg });
+          toast.error(msg);
+          return;
+        }
         toast.success('Account created — check your email to confirm.');
         setMode('signin');
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchMode = (m: Mode) => {
+    setMode(m);
+    setErrors({});
+    setTouched({});
   };
 
   return (
@@ -79,7 +152,7 @@ export default function Login() {
               <button
                 key={m}
                 type="button"
-                onClick={() => setMode(m)}
+                onClick={() => switchMode(m)}
                 className="relative z-10 py-2 text-xs font-semibold uppercase tracking-wider transition-colors"
               >
                 {mode === m && (
@@ -94,38 +167,91 @@ export default function Login() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
             <AnimatePresence mode="wait">
               {mode === 'signup' && (
                 <motion.div
                   key="name"
                   initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                 >
-                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Name</label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)}
-                    className="mt-1 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-brand-blue" />
+                  <label htmlFor="name" className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Name</label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => { setName(e.target.value); if (touched.name) validateField('name'); }}
+                    onBlur={() => { setTouched((t) => ({ ...t, name: true })); validateField('name'); }}
+                    aria-invalid={!!errors.name}
+                    aria-describedby={errors.name ? 'name-err' : undefined}
+                    className={`mt-1 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 ${errors.name ? 'ring-2 ring-destructive focus-visible:ring-destructive' : 'focus-visible:ring-brand-blue'}`}
+                  />
+                  {errors.name && (
+                    <p id="name-err" className="mt-1 text-[11px] text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {errors.name}
+                    </p>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
             <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Email</label>
-              <Input type="email" autoComplete="email" required
-                value={email} onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-brand-blue" />
+              <label htmlFor="email" className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Email</label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); if (touched.email) validateField('email'); }}
+                onBlur={() => { setTouched((t) => ({ ...t, email: true })); validateField('email'); }}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-err' : undefined}
+                className={`mt-1 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 ${errors.email ? 'ring-2 ring-destructive focus-visible:ring-destructive' : 'focus-visible:ring-brand-blue'}`}
+              />
+              {errors.email && (
+                <p id="email-err" className="mt-1 text-[11px] text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {errors.email}
+                </p>
+              )}
             </div>
             <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Password</label>
+              <label htmlFor="password" className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Password</label>
               <div className="relative mt-1">
-                <Input type={showPassword ? 'text' : 'password'} required minLength={6}
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                  value={password} onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 rounded-xl bg-muted/50 border-0 pr-12 focus-visible:ring-2 focus-visible:ring-brand-blue" />
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); if (touched.password) validateField('password'); }}
+                  onBlur={() => { setTouched((t) => ({ ...t, password: true })); validateField('password'); }}
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? 'password-err' : 'password-help'}
+                  className={`h-11 rounded-xl bg-muted/50 border-0 pr-12 focus-visible:ring-2 ${errors.password ? 'ring-2 ring-destructive focus-visible:ring-destructive' : 'focus-visible:ring-brand-blue'}`}
+                />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Toggle password"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {errors.password ? (
+                <p id="password-err" className="mt-1 text-[11px] text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {errors.password}
+                </p>
+              ) : mode === 'signup' && password.length > 0 ? (
+                <div id="password-help" className="mt-2">
+                  <div className="flex gap-1">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i < passwordScore ? strengthColor : 'bg-muted'}`} />
+                    ))}
+                  </div>
+                  <p className="mt-1 text-[10px] text-muted-foreground">Strength: <span className="text-foreground font-medium">{strengthLabel}</span></p>
+                </div>
+              ) : null}
             </div>
+
+            {errors.form && (
+              <div role="alert" className="flex items-start gap-2 rounded-xl bg-destructive/10 border border-destructive/30 p-2.5">
+                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <p className="text-[12px] text-destructive leading-snug">{errors.form}</p>
+              </div>
+            )}
 
             <Button type="submit" disabled={loading}
               className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-navy-light font-semibold text-sm transition-all duration-200 active:scale-[0.97] mt-1">
