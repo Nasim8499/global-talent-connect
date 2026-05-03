@@ -294,6 +294,69 @@ export default function Login() {
           {/* Polite live region for status announcements */}
           <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">{statusMsg}</div>
 
+          {mode === 'forgot' && forgotSent ? (
+            <div className="space-y-4" aria-labelledby="forgot-confirm-title">
+              <div className="flex flex-col items-center text-center">
+                <motion.div
+                  initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                  className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 mb-3"
+                >
+                  <MailCheck className="w-7 h-7 text-emerald-500" aria-hidden="true" />
+                </motion.div>
+                <h2 id="forgot-confirm-title" className="text-lg font-semibold text-foreground">Check your inbox</h2>
+                <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+                  If an account exists for this address, we sent a password reset link to:
+                </p>
+                <p className="mt-2 px-3 py-2 rounded-lg bg-muted/60 text-[13px] font-medium text-foreground break-all max-w-full">
+                  {maskEmail(sentToEmail)}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
+                  The link expires in 60 minutes. Check your spam folder if you don't see it.
+                </p>
+              </div>
+
+              <div role="alert" aria-live="assertive" className="min-h-[1rem]">
+                {errors.form && (
+                  <div className="flex items-start gap-2 rounded-xl bg-destructive/10 border border-destructive/30 p-2.5">
+                    <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+                    <p className="text-[12px] text-destructive leading-snug">{errors.form}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendCooldown > 0 || resendLoading}
+                  aria-describedby="resend-help"
+                  className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-navy-light font-semibold text-sm active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+                >
+                  {resendLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                  ) : resendCooldown > 0 ? (
+                    <>Resend in {resendCooldown}s</>
+                  ) : (
+                    <><RefreshCw className="w-4 h-4" aria-hidden="true" /> Resend reset link</>
+                  )}
+                </Button>
+                <p id="resend-help" className="text-[10px] text-muted-foreground text-center">
+                  {resendCooldown > 0
+                    ? `You can request another link in ${resendCooldown} second${resendCooldown === 1 ? '' : 's'}.`
+                    : 'Didn\u2019t get the email? Tap resend.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => switchMode('signin')}
+                  className="text-[12px] text-brand-blue hover:underline mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue rounded"
+                >
+                  Return to sign in
+                </button>
+              </div>
+            </div>
+          ) : (
+
           <form id="login-form" onSubmit={handleSubmit} noValidate className="space-y-3.5"
             aria-busy={loading} aria-describedby={errors.form ? 'form-error' : undefined}>
             <AnimatePresence mode="wait">
