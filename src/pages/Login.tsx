@@ -145,7 +145,7 @@ export default function Login() {
                 onChange={(e) => setDigit(i, e.target.value)}
                 onKeyDown={(e) => handleKey(i, e)}
                 onPaste={handlePaste}
-                tabIndex={i === 0 ? 0 : -1}
+                tabIndex={0}
                 autoComplete="one-time-code"
                 aria-label={`Passport digit ${i + 1} of ${SLOTS}`}
                 aria-invalid={!!error}
