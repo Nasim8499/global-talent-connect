@@ -220,8 +220,8 @@ export default function Workers() {
         )}
       </AnimatePresence>
 
-      {/* Worker List */}
-      <div className="mt-4 space-y-2">
+      {/* Worker Grid — 2 per row on mobile, list on larger screens */}
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-1 gap-2.5">
         <AnimatePresence mode="popLayout">
           {filtered.map((worker, i) => (
             <motion.div
@@ -234,34 +234,59 @@ export default function Workers() {
             >
               <Link
                 to={`/workers/${worker.id}`}
-                className="card-elevated flex items-center gap-3 p-4 transition-all duration-200 hover:shadow-lifted active:scale-[0.98] block"
+                className="card-elevated p-3 md:p-4 transition-all duration-200 hover:shadow-lifted active:scale-[0.98] block h-full md:flex md:items-center md:gap-3"
               >
-                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-primary">
-                    {worker.firstName[0]}{worker.lastName[0]}
+                {/* Mobile: stacked card layout */}
+                <div className="md:hidden flex flex-col h-full">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-primary">
+                        {worker.firstName[0]}{worker.lastName[0]}
+                      </span>
+                    </div>
+                    <span className="text-xl leading-none">{countryFlags[worker.destinationCountry] || ''}</span>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground truncate mt-2 leading-tight">
+                    {worker.firstName} {worker.lastName}
+                  </p>
+                  <p className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5 truncate">
+                    <Briefcase className="w-3 h-3 flex-shrink-0" /><span className="truncate">{worker.jobTitle}</span>
+                  </p>
+                  <span className={`status-${worker.status} text-[9px] px-1.5 py-0.5 rounded-full font-medium mt-1.5 self-start`}>
+                    {statusLabels[worker.status]}
                   </span>
+                  <p className="text-[9px] text-muted-foreground/60 mt-1 font-mono truncate">{worker.internalId}</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {worker.firstName} {worker.lastName}
-                    </p>
-                    <span className={`status-${worker.status} text-[10px] px-2 py-0.5 rounded-full font-medium`}>
-                      {statusLabels[worker.status]}
+
+                {/* Desktop: row layout */}
+                <div className="hidden md:flex md:items-center md:gap-3 md:w-full">
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-primary">
+                      {worker.firstName[0]}{worker.lastName[0]}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Briefcase className="w-3 h-3" />{worker.jobTitle}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <span className="text-base leading-none">{countryFlags[worker.destinationCountry] || ''}</span>
-                      {worker.destinationCountry}
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {worker.firstName} {worker.lastName}
+                      </p>
+                      <span className={`status-${worker.status} text-[10px] px-2 py-0.5 rounded-full font-medium`}>
+                        {statusLabels[worker.status]}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Briefcase className="w-3 h-3" />{worker.jobTitle}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span className="text-base leading-none">{countryFlags[worker.destinationCountry] || ''}</span>
+                        {worker.destinationCountry}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground/60 mt-0.5 font-mono">{worker.internalId}</p>
                   </div>
-                  <p className="text-[10px] text-muted-foreground/60 mt-0.5 font-mono">{worker.internalId}</p>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
               </Link>
             </motion.div>
           ))}
