@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Globe, Loader2, AlertCircle, ArrowLeft, CheckCircle2, MailCheck, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Globe, Loader2, AlertCircle, ArrowLeft, MailCheck, RefreshCw } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
