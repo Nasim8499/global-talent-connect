@@ -255,7 +255,7 @@ export default function Drive() {
       {/* Files Grid/List */}
       <motion.div {...fade} transition={{ duration: 0.5, delay: 0.15 }} className="mt-5">
         {view === 'grid' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
             <AnimatePresence mode="popLayout">
               {filtered.map((file, i) => {
                 const Icon = fileIcons[file.type] || File;
