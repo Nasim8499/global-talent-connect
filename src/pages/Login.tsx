@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Globe, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Globe, Loader2, AlertCircle } from 'lucide-react';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth, roleHomePath } from '@/contexts/AuthContext';
@@ -10,6 +11,26 @@ import { toast } from 'sonner';
 import DigitalBackdrop from '@/components/DigitalBackdrop';
 
 type Mode = 'signin' | 'signup';
+
+const baseSchema = {
+  email: z.string().trim().toLowerCase()
+    .min(1, 'Email is required')
+    .email('Enter a valid email address')
+    .max(255, 'Email must be under 255 characters'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(72, 'Password must be under 72 characters')
+    .regex(/[A-Za-z]/, 'Password must include a letter')
+    .regex(/[0-9]/, 'Password must include a number'),
+};
+
+const signinSchema = z.object(baseSchema);
+const signupSchema = z.object({
+  ...baseSchema,
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(80, 'Name must be under 80 characters'),
+});
+
+type FieldErrors = { email?: string; password?: string; name?: string; form?: string };
 
 export default function Login() {
   const navigate = useNavigate();
