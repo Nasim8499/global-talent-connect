@@ -9,10 +9,13 @@ interface AuthContextType {
   role: UserRole | null;
   loading: boolean;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
 }
+
+const REMEMBER_KEY = 'visahobe.rememberMe';
+const TAB_FLAG = 'visahobe.tab';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -43,17 +46,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (sess?.user) hydrateProfile(sess.user.id);
       else { setRole(null); setDisplayName(''); }
     });
-    // Then fetch existing session
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      setSession(sess);
-      setSupaUser(sess?.user ?? null);
-      if (sess?.user) hydrateProfile(sess.user.id);
+    // Then fetch existing session — enforce "Remember me" semantics:
+    // if the user opted out, sign out when a brand-new browser session starts.
+    supabase.auth.getSession().then(async ({ data: { session: sess } }) => {
+      const remember = localStorage.getItem(REMEMBER_KEY) !== 'false';
+      const sameTabSession = sessionStorage.getItem(TAB_FLAG) === '1';
+      if (sess && !remember && !sameTabSession) {
+        await supabase.auth.signOut();
+        setSession(null); setSupaUser(null);
+      } else {
+        setSession(sess);
+        setSupaUser(sess?.user ?? null);
+        if (sess?.user) hydrateProfile(sess.user.id);
+      }
+      sessionStorage.setItem(TAB_FLAG, '1');
       setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
   }, [hydrateProfile]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string, rememberMe: boolean = true) => {
+    localStorage.setItem(REMEMBER_KEY, rememberMe ? 'true' : 'false');
+    sessionStorage.setItem(TAB_FLAG, '1');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error?.message ?? null };
   }, []);
