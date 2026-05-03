@@ -484,6 +484,59 @@ export default function Drive() {
         <Upload className="w-6 h-6 text-primary" />
       </motion.button>
 
+      {/* Inline Rename Preview Modal */}
+      <AnimatePresence>
+        {renaming && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/55 backdrop-blur-sm p-3"
+            onClick={() => setRenaming(null)}
+          >
+            <motion.div
+              initial={{ y: 24, scale: 0.97 }} animate={{ y: 0, scale: 1 }} exit={{ y: 24, scale: 0.97 }}
+              className="w-full max-w-md bg-card rounded-2xl shadow-lifted border border-border/60 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
+                <h3 className="text-sm font-semibold text-foreground">Rename file</h3>
+                <button onClick={() => setRenaming(null)} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-4 space-y-3 min-w-0">
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Smart name (auto-formatted)</span>
+                  <Input
+                    autoFocus
+                    value={renameInput}
+                    onChange={(e) => setRenameInput(e.target.value)}
+                    placeholder="MOHAMMAD_RAHMAN_PASSPORT"
+                    className="mt-1.5 h-11 rounded-xl bg-background border-border/60 font-mono text-[13px]"
+                  />
+                </label>
+                <div className="rounded-xl bg-muted/40 border border-border/40 p-3 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Preview</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                      {typeBadgeFor(renamePreview)}
+                    </span>
+                  </div>
+                  <p className="text-[12px] font-mono text-foreground break-all leading-snug">{renamePreview}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 px-4 pb-4 pt-1">
+                <button onClick={() => setRenaming(null)} className="flex-1 h-11 rounded-xl border border-border/60 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button onClick={commitRename} className="flex-1 h-11 rounded-xl gradient-navy text-white text-sm font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                  <Check className="w-4 h-4" /> Save
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Document Viewer */}
       <DocumentViewer
         open={viewerOpen}
