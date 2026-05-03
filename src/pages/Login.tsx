@@ -47,6 +47,44 @@ export default function Login() {
   const [touched, setTouched] = useState<{ email?: boolean; password?: boolean; name?: boolean }>({});
   const [statusMsg, setStatusMsg] = useState<string>('');
   const [forgotSent, setForgotSent] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendLoading, setResendLoading] = useState(false);
+
+  // Cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
+
+  const maskEmail = (addr: string) => {
+    const [user, domain] = addr.split('@');
+    if (!user || !domain) return addr;
+    const u = user.length <= 2 ? user[0] + '•' : user[0] + '•'.repeat(Math.min(user.length - 2, 6)) + user[user.length - 1];
+    const [dName, ...rest] = domain.split('.');
+    const d = dName.length <= 2 ? dName[0] + '•' : dName[0] + '•'.repeat(Math.min(dName.length - 2, 4)) + dName[dName.length - 1];
+    return `${u}@${d}${rest.length ? '.' + rest.join('.') : ''}`;
+  };
+
+  const handleResend = async () => {
+    if (resendCooldown > 0 || resendLoading || !sentToEmail) return;
+    setResendLoading(true);
+    setStatusMsg('Resending reset link…');
+    const { error } = await supabase.auth.resetPasswordForEmail(sentToEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResendLoading(false);
+    if (error) {
+      setErrors({ form: error.message });
+      setStatusMsg(`Could not resend: ${error.message}`);
+      toast.error(error.message);
+      return;
+    }
+    setResendCooldown(45);
+    setStatusMsg(`Reset link resent to ${maskEmail(sentToEmail)}.`);
+    toast.success('Reset link resent');
+  };
 
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
   const submitRef = useRef<HTMLButtonElement | null>(null);
