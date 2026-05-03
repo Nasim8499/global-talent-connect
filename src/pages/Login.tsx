@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth, roleHomePath } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import DigitalBackdrop from '@/components/DigitalBackdrop';
 
 type Mode = 'signin' | 'signup';
 
@@ -51,9 +52,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gradient-navy px-4 overflow-hidden">
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-brand-blue/10 rounded-full blur-[100px]" />
-      <div className="absolute bottom-1/3 right-1/4 w-48 h-48 bg-brand-gold/10 rounded-full blur-[80px]" />
+    <div className="min-h-screen flex flex-col items-center justify-center gradient-navy px-4 overflow-hidden relative">
+      <DigitalBackdrop />
 
       <motion.div
         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
