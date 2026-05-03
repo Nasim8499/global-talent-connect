@@ -127,7 +127,7 @@ export default function WorkerDetail() {
       </div>
 
       {/* Content */}
-      <div className="px-4 md:px-8 py-6">
+      <div className="px-3 sm:px-4 md:px-8 py-4 sm:py-6">
         <AnimatePresence mode="wait">
           {activeTab === 'Overview' && (
             <motion.div

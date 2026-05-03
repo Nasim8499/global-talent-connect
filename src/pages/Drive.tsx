@@ -144,7 +144,7 @@ export default function Drive() {
 
   return (
     <div
-      className="px-4 md:px-8 py-6 max-w-4xl mx-auto relative min-h-[80vh]"
+      className="px-3 sm:px-4 md:px-8 py-4 sm:py-6 max-w-4xl mx-auto relative min-h-[80vh]"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
