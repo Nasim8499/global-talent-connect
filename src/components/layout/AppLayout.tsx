@@ -97,7 +97,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </div>
           )}
           <button
-            onClick={() => { logout(); navigate('/login'); }}
+            onClick={async () => { await logout(); navigate('/login'); }}
             className="flex items-center gap-3 px-3 py-2 rounded-xl text-white/40 hover:text-white hover:bg-white/8 w-full text-sm transition-colors"
           >
             <LogOut className="w-4 h-4" />
