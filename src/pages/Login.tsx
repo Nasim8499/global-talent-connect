@@ -130,8 +130,10 @@ export default function Login() {
             transition={{ duration: 0.4 }}
             className="flex items-center justify-between gap-2"
             role="group"
-            aria-label="Passport number"
+            aria-labelledby="passport-label"
+            aria-describedby="passport-status"
           >
+            <span id="passport-label" className="sr-only">Enter 6-digit demo passport number</span>
             {digits.map((d, i) => (
               <input
                 key={i}
@@ -143,7 +145,11 @@ export default function Login() {
                 onChange={(e) => setDigit(i, e.target.value)}
                 onKeyDown={(e) => handleKey(i, e)}
                 onPaste={handlePaste}
-                aria-label={`Digit ${i + 1}`}
+                tabIndex={0}
+                autoComplete="one-time-code"
+                aria-label={`Passport digit ${i + 1} of ${SLOTS}`}
+                aria-invalid={!!error}
+                aria-describedby="passport-status"
                 className={`w-11 h-14 text-center text-xl font-bold rounded-xl bg-muted/40 border-2 transition-all
                   focus:outline-none focus:bg-card focus:border-brand-gold focus:shadow-[0_0_0_4px_hsl(var(--brand-gold)/0.18)]
                   ${error ? 'border-destructive/60 text-destructive' : d ? 'border-brand-blue/60 text-foreground' : 'border-transparent text-foreground'}`}
@@ -151,16 +157,16 @@ export default function Login() {
             ))}
           </motion.div>
 
-          {/* Live status */}
-          <div role="status" aria-live="polite" className="min-h-[1.25rem] mt-3">
+          {/* Live status / error feedback */}
+          <div id="passport-status" className="min-h-[1.25rem] mt-3">
             {error ? (
-              <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/30 px-2.5 py-1.5">
+              <div role="alert" aria-live="assertive" className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/30 px-2.5 py-1.5">
                 <AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
                 <p className="text-[11px] text-destructive leading-snug">{error}</p>
               </div>
             ) : (
-              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                <ScanLine className="w-3 h-3" /> Demo passport: <span className="font-mono font-semibold text-foreground">666085</span>
+              <p role="status" aria-live="polite" className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <ScanLine className="w-3 h-3" aria-hidden="true" /> Demo passport: <span className="font-mono font-semibold text-foreground">666085</span>
               </p>
             )}
           </div>

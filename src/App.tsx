@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import Login from "@/pages/Login";
-import ResetPassword from "@/pages/ResetPassword";
 import Index from "@/pages/Index";
 import Workers from "@/pages/Workers";
 import WorkerDetail from "@/pages/WorkerDetail";
@@ -43,7 +42,6 @@ function AppRoutes() {
       <OverflowReport />
     <Routes>
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/workers" element={<ProtectedRoute><Workers /></ProtectedRoute>} />
       <Route path="/workers/:id" element={<ProtectedRoute><WorkerDetail /></ProtectedRoute>} />
