@@ -101,7 +101,7 @@ export default function MoreMenu() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
         whileTap={{ scale: 0.97 }}
-        onClick={() => { logout(); navigate('/login'); }}
+        onClick={async () => { await logout(); navigate('/login'); }}
         className="w-full card-elevated p-4 flex items-center justify-center gap-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
       >
         <LogOut className="w-4 h-4" /> Sign Out
