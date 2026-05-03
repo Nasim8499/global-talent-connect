@@ -41,6 +41,36 @@ export default function Login() {
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean; name?: boolean }>({});
+
+  const passwordScore = (() => {
+    let s = 0;
+    if (password.length >= 8) s++;
+    if (/[A-Z]/.test(password)) s++;
+    if (/[0-9]/.test(password)) s++;
+    if (/[^A-Za-z0-9]/.test(password)) s++;
+    return s;
+  })();
+  const strengthLabel = ['Too weak', 'Weak', 'Fair', 'Strong', 'Excellent'][passwordScore];
+  const strengthColor = ['bg-destructive', 'bg-destructive', 'bg-amber-500', 'bg-emerald-500', 'bg-emerald-500'][passwordScore];
+
+  const validate = (): FieldErrors => {
+    const schema = mode === 'signup' ? signupSchema : signinSchema;
+    const result = schema.safeParse({ email, password, ...(mode === 'signup' ? { name } : {}) });
+    if (result.success) return {};
+    const next: FieldErrors = {};
+    for (const issue of result.error.issues) {
+      const k = issue.path[0] as keyof FieldErrors;
+      if (k && !next[k]) next[k] = issue.message;
+    }
+    return next;
+  };
+
+  const validateField = (field: 'email' | 'password' | 'name') => {
+    const next = validate();
+    setErrors((prev) => ({ ...prev, [field]: next[field], form: undefined }));
+  };
 
   const fetchRoleAndRedirect = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -53,23 +83,45 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    const next = validate();
+    setTouched({ email: true, password: true, name: mode === 'signup' });
+    if (Object.keys(next).length) {
+      setErrors(next);
+      return;
+    }
+    setErrors({});
     setLoading(true);
     try {
       if (mode === 'signin') {
-        const { error } = await signIn(email, password);
-        if (error) { toast.error(error); return; }
+        const { error } = await signIn(email.trim().toLowerCase(), password);
+        if (error) {
+          const msg = /invalid|credentials/i.test(error) ? 'Incorrect email or password.' : error;
+          setErrors({ form: msg });
+          toast.error(msg);
+          return;
+        }
         toast.success('Welcome back');
         await fetchRoleAndRedirect();
       } else {
-        const { error } = await signUp(email, password, name);
-        if (error) { toast.error(error); return; }
+        const { error } = await signUp(email.trim().toLowerCase(), password, name.trim());
+        if (error) {
+          const msg = /registered|exists/i.test(error) ? 'An account with this email already exists.' : error;
+          setErrors({ form: msg });
+          toast.error(msg);
+          return;
+        }
         toast.success('Account created — check your email to confirm.');
         setMode('signin');
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchMode = (m: Mode) => {
+    setMode(m);
+    setErrors({});
+    setTouched({});
   };
 
   return (
