@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, Loader2, AlertCircle, ShieldCheck, Fingerprint, ScanLine } from 'lucide-react';
+import { Globe, Loader2, AlertCircle, ShieldCheck, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth, roleHomePath } from '@/contexts/AuthContext';
 import DigitalBackdrop from '@/components/DigitalBackdrop';
@@ -17,6 +17,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [scanning, setScanning] = useState(false);
+  const [announce, setAnnounce] = useState('');
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => { inputs.current[0]?.focus(); }, []);
@@ -24,24 +25,65 @@ export default function Login() {
   const passport = digits.join('');
   const filled = passport.length === SLOTS;
 
+  const focusSlot = (i: number) => {
+    const el = inputs.current[Math.max(0, Math.min(SLOTS - 1, i))];
+    if (el) { el.focus(); requestAnimationFrame(() => el.select()); }
+  };
+
   const setDigit = (i: number, v: string) => {
-    const clean = v.replace(/\D/g, '').slice(-1);
+    const onlyDigits = v.replace(/\D/g, '');
     setError('');
+    // Multi-char input (autofill / mobile keyboard) → distribute across slots
+    if (onlyDigits.length > 1) {
+      const next = [...digits];
+      let idx = i;
+      for (const ch of onlyDigits) {
+        if (idx >= SLOTS) break;
+        next[idx++] = ch;
+      }
+      setDigits(next);
+      setAnnounce(`${onlyDigits.length} digits entered`);
+      focusSlot(Math.min(idx, SLOTS - 1));
+      return;
+    }
+    const clean = onlyDigits.slice(-1);
     setDigits((prev) => {
       const next = [...prev];
       next[i] = clean;
       return next;
     });
-    if (clean && i < SLOTS - 1) inputs.current[i + 1]?.focus();
+    if (clean) {
+      setAnnounce(`Digit ${i + 1} entered`);
+      if (i < SLOTS - 1) focusSlot(i + 1);
+    }
   };
 
   const handleKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !digits[i] && i > 0) {
-      inputs.current[i - 1]?.focus();
-      setDigits((prev) => { const n = [...prev]; n[i - 1] = ''; return n; });
-    } else if (e.key === 'ArrowLeft' && i > 0) inputs.current[i - 1]?.focus();
-    else if (e.key === 'ArrowRight' && i < SLOTS - 1) inputs.current[i + 1]?.focus();
+    if (e.key === 'Backspace') {
+      if (digits[i]) {
+        // Clear current slot, stay focused
+        setDigits((prev) => { const n = [...prev]; n[i] = ''; return n; });
+        setAnnounce(`Digit ${i + 1} cleared`);
+      } else if (i > 0) {
+        // Move back and clear previous
+        setDigits((prev) => { const n = [...prev]; n[i - 1] = ''; return n; });
+        setAnnounce(`Digit ${i} cleared`);
+        focusSlot(i - 1);
+      }
+      e.preventDefault();
+    } else if (e.key === 'Delete') {
+      setDigits((prev) => { const n = [...prev]; n[i] = ''; return n; });
+      e.preventDefault();
+    } else if (e.key === 'ArrowLeft' && i > 0) { focusSlot(i - 1); e.preventDefault(); }
+    else if (e.key === 'ArrowRight' && i < SLOTS - 1) { focusSlot(i + 1); e.preventDefault(); }
+    else if (e.key === 'Home') { focusSlot(0); e.preventDefault(); }
+    else if (e.key === 'End') { focusSlot(SLOTS - 1); e.preventDefault(); }
     else if (e.key === 'Enter' && filled) handleVerify();
+  };
+
+  const handleFocus = (i: number) => {
+    // Auto-select for easy overwrite
+    requestAnimationFrame(() => inputs.current[i]?.select());
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -51,7 +93,8 @@ export default function Login() {
     const next = Array(SLOTS).fill('');
     for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
     setDigits(next);
-    inputs.current[Math.min(pasted.length, SLOTS - 1)]?.focus();
+    setAnnounce(`Pasted ${pasted.length} of ${SLOTS} digits`);
+    focusSlot(Math.min(pasted.length, SLOTS - 1));
   };
 
   const handleVerify = async () => {
@@ -138,19 +181,21 @@ export default function Login() {
               <input
                 key={i}
                 ref={(el) => (inputs.current[i] = el)}
+                type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                maxLength={1}
+                maxLength={SLOTS}
                 value={d}
                 onChange={(e) => setDigit(i, e.target.value)}
                 onKeyDown={(e) => handleKey(i, e)}
+                onFocus={() => handleFocus(i)}
                 onPaste={handlePaste}
                 tabIndex={0}
                 autoComplete="one-time-code"
                 aria-label={`Passport digit ${i + 1} of ${SLOTS}`}
                 aria-invalid={!!error}
-                aria-describedby="passport-status"
-                className={`w-11 h-14 text-center text-xl font-bold rounded-xl bg-muted/40 border-2 transition-all
+                aria-describedby="passport-status passport-announce"
+                className={`w-11 h-14 text-center text-xl font-bold rounded-xl bg-muted/40 border-2 transition-all caret-brand-gold
                   focus:outline-none focus:bg-card focus:border-brand-gold focus:shadow-[0_0_0_4px_hsl(var(--brand-gold)/0.18)]
                   ${error ? 'border-destructive/60 text-destructive' : d ? 'border-brand-blue/60 text-foreground' : 'border-transparent text-foreground'}`}
               />
@@ -159,16 +204,16 @@ export default function Login() {
 
           {/* Live status / error feedback */}
           <div id="passport-status" className="min-h-[1.25rem] mt-3">
-            {error ? (
+            {error && (
               <div role="alert" aria-live="assertive" className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/30 px-2.5 py-1.5">
                 <AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
                 <p className="text-[11px] text-destructive leading-snug">{error}</p>
               </div>
-            ) : (
-              <p role="status" aria-live="polite" className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                <ScanLine className="w-3 h-3" aria-hidden="true" /> Demo passport: <span className="font-mono font-semibold text-foreground">666085</span>
-              </p>
             )}
+          </div>
+          {/* SR-only announcer for input progress / paste / clear actions */}
+          <div id="passport-announce" aria-live="polite" aria-atomic="true" className="sr-only">
+            {announce}
           </div>
 
           <Button
