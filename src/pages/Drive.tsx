@@ -276,7 +276,7 @@ export default function Drive() {
                     >
                       <div className="aspect-[4/3] bg-muted/50 flex items-center justify-center overflow-hidden relative">
                         {file.type === 'image' && file.thumbnail ? (
-                          <img src={file.thumbnail} alt={file.name} className="w-full h-full object-cover" />
+                          <img src={file.thumbnail} alt={file.name} className="w-full h-full object-cover" loading="lazy" />
                         ) : (
                           <div className={`w-12 h-12 rounded-xl ${fileColors[file.type]} flex items-center justify-center`}>
                             <Icon className="w-6 h-6" />
@@ -285,20 +285,30 @@ export default function Drive() {
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                           <Eye className="w-6 h-6 text-white drop-shadow-lg" />
                         </div>
+                        {/* Type badge — always visible so labels never need to repeat extension */}
+                        <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-black/60 text-white backdrop-blur-sm">
+                          {file.name.split('.').pop()?.slice(0, 4)}
+                        </span>
                       </div>
-                      <div className="p-3">
-                        <p className="text-xs font-medium text-foreground truncate">{file.name}</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-[10px] text-muted-foreground">{file.size}</span>
-                          <span className="text-[10px] text-muted-foreground">{new Date(file.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                      <div className="p-2.5 sm:p-3 min-w-0">
+                        <p
+                          className="text-[11px] sm:text-xs font-medium text-foreground leading-tight break-all line-clamp-2"
+                          title={file.name}
+                        >
+                          {file.name}
+                        </p>
+                        <div className="flex items-center justify-between mt-1.5 gap-1">
+                          <span className="text-[10px] text-muted-foreground truncate">{file.size}</span>
+                          <span className="text-[10px] text-muted-foreground truncate">{new Date(file.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                         </div>
                       </div>
                     </motion.button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setContextMenu(contextMenu === file.id ? null : file.id); }}
-                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/40 text-white opacity-0 group-hover:opacity-100 md:opacity-70 transition-opacity active:scale-90"
+                      aria-label="File actions"
+                      className="absolute top-1.5 right-1.5 w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-black/55 text-white opacity-90 md:opacity-70 transition-opacity active:scale-90 flex items-center justify-center backdrop-blur-sm"
                     >
-                      <MoreVertical className="w-3.5 h-3.5" />
+                      <MoreVertical className="w-4 h-4" />
                     </button>
                     <AnimatePresence>
                       {contextMenu === file.id && (
