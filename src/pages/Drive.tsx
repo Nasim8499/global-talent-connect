@@ -1,13 +1,15 @@
-import { useState, useRef, useCallback, DragEvent } from 'react';
+import { useState, useRef, useCallback, DragEvent, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload, FolderOpen, Grid3X3, List, Search, MoreVertical,
   FileText, Image as ImageIcon, File, Trash2, Eye, Download,
-  Plus, CloudUpload,
+  Plus, CloudUpload, Pencil, X, Check,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import DocumentViewer from '@/components/DocumentViewer';
+import { isLongSeedActive, LONG_FILENAMES } from '@/data/longSeeds';
+import { smartFilename, sanitizeBase, inferTypeFromName, typeBadgeFor } from '@/lib/smartFilename';
 
 interface DriveFile {
   id: string;
@@ -63,16 +65,40 @@ function processFiles(fileList: FileList): DriveFile[] {
 }
 
 export default function Drive() {
-  const [files, setFiles] = useState<DriveFile[]>(demoFiles);
+  const longSeed = useMemo(() => isLongSeedActive(), []);
+  const [files, setFiles] = useState<DriveFile[]>(() => {
+    if (!isLongSeedActive()) return demoFiles;
+    const extras: DriveFile[] = LONG_FILENAMES.map((name, idx) => ({
+      id: `long-${idx}`,
+      name,
+      type: inferTypeFromName(name),
+      size: `${(2 + idx * 0.7).toFixed(1)} MB`,
+      date: '2026-04-01',
+      folder: idx % 2 === 0 ? 'agreements' : 'visas',
+      url: '',
+    }));
+    return [...extras, ...demoFiles];
+  });
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [search, setSearch] = useState('');
   const [activeFolder, setActiveFolder] = useState('all');
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerFile, setViewerFile] = useState<{ name: string; type: 'pdf' | 'image'; url: string } | null>(null);
   const [contextMenu, setContextMenu] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<DriveFile | null>(null);
+  const [renameInput, setRenameInput] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (longSeed) toast.info('Long-seed mode active — stress-testing layout');
+  }, [longSeed]);
+
+  const renamePreview = useMemo(() => {
+    if (!renaming) return '';
+    return smartFilename({ base: renameInput || renaming.name, type: renaming.type });
+  }, [renameInput, renaming]);
 
   const filtered = files.filter(f => {
     const matchFolder = activeFolder === 'all' || f.folder === activeFolder;
@@ -141,6 +167,20 @@ export default function Drive() {
     setContextMenu(null);
     toast.success('File deleted');
   }, []);
+
+  const startRename = useCallback((f: DriveFile) => {
+    setRenaming(f);
+    setRenameInput(sanitizeBase(f.name));
+    setContextMenu(null);
+  }, []);
+
+  const commitRename = useCallback(() => {
+    if (!renaming) return;
+    const next = smartFilename({ base: renameInput || renaming.name, type: renaming.type });
+    setFiles(prev => prev.map(f => (f.id === renaming.id ? { ...f, name: next } : f)));
+    setRenaming(null);
+    toast.success('File renamed');
+  }, [renaming, renameInput]);
 
   return (
     <div
@@ -329,6 +369,9 @@ export default function Drive() {
                             <button onClick={() => { openFile(file); setContextMenu(null); }} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
                               <Eye className="w-3.5 h-3.5" /> Preview
                             </button>
+                            <button onClick={() => startRename(file)} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
+                              <Pencil className="w-3.5 h-3.5" /> Rename
+                            </button>
                             <button onClick={() => { setContextMenu(null); toast.info('Download started'); }} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
                               <Download className="w-3.5 h-3.5" /> Download
                             </button>
@@ -358,31 +401,50 @@ export default function Drive() {
                     exit={{ opacity: 0, x: 8 }}
                     transition={{ delay: 0.02 * i, duration: 0.25 }}
                   >
-                    <motion.button
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => openFile(file)}
-                      className="w-full card-elevated p-3.5 flex items-center gap-3 text-left hover:shadow-lifted transition-shadow active:scale-[0.99]"
-                    >
-                      {file.type === 'image' && file.thumbnail ? (
-                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                          <img src={file.thumbnail} alt="" className="w-full h-full object-cover" />
-                        </div>
-                      ) : (
-                        <div className={`w-10 h-10 rounded-lg ${fileColors[file.type]} flex items-center justify-center flex-shrink-0`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{file.size} • {new Date(file.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                      </div>
+                    <div className="card-elevated p-2.5 sm:p-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
                       <button
-                        onClick={(e) => { e.stopPropagation(); deleteFile(file.id); }}
-                        className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+                        onClick={() => openFile(file)}
+                        className="flex items-center gap-2.5 sm:gap-3 text-left flex-1 min-w-0 active:scale-[0.99] transition-transform"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        {file.type === 'image' && file.thumbnail ? (
+                          <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0">
+                            <img src={file.thumbnail} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className={`w-11 h-11 rounded-lg ${fileColors[file.type]} flex items-center justify-center flex-shrink-0`}>
+                            <Icon className="w-5 h-5" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] sm:text-sm font-medium text-foreground leading-snug break-all line-clamp-2 sm:line-clamp-1" title={file.name}>
+                            {file.name}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                              {typeBadgeFor(file.name)}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">{file.size}</span>
+                            <span className="text-[10px] text-muted-foreground">• {new Date(file.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                          </div>
+                        </div>
                       </button>
-                    </motion.button>
+                      <div className="flex items-center gap-1 self-end sm:self-auto flex-shrink-0">
+                        <button
+                          onClick={() => startRename(file)}
+                          aria-label="Rename"
+                          className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteFile(file.id)}
+                          aria-label="Delete"
+                          className="w-9 h-9 rounded-lg hover:bg-destructive/10 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </motion.div>
                 );
               })}
@@ -421,6 +483,59 @@ export default function Drive() {
       >
         <Upload className="w-6 h-6 text-primary" />
       </motion.button>
+
+      {/* Inline Rename Preview Modal */}
+      <AnimatePresence>
+        {renaming && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/55 backdrop-blur-sm p-3"
+            onClick={() => setRenaming(null)}
+          >
+            <motion.div
+              initial={{ y: 24, scale: 0.97 }} animate={{ y: 0, scale: 1 }} exit={{ y: 24, scale: 0.97 }}
+              className="w-full max-w-md bg-card rounded-2xl shadow-lifted border border-border/60 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
+                <h3 className="text-sm font-semibold text-foreground">Rename file</h3>
+                <button onClick={() => setRenaming(null)} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-4 space-y-3 min-w-0">
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Smart name (auto-formatted)</span>
+                  <Input
+                    autoFocus
+                    value={renameInput}
+                    onChange={(e) => setRenameInput(e.target.value)}
+                    placeholder="MOHAMMAD_RAHMAN_PASSPORT"
+                    className="mt-1.5 h-11 rounded-xl bg-background border-border/60 font-mono text-[13px]"
+                  />
+                </label>
+                <div className="rounded-xl bg-muted/40 border border-border/40 p-3 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Preview</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                      {typeBadgeFor(renamePreview)}
+                    </span>
+                  </div>
+                  <p className="text-[12px] font-mono text-foreground break-all leading-snug">{renamePreview}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 px-4 pb-4 pt-1">
+                <button onClick={() => setRenaming(null)} className="flex-1 h-11 rounded-xl border border-border/60 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button onClick={commitRename} className="flex-1 h-11 rounded-xl gradient-navy text-white text-sm font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                  <Check className="w-4 h-4" /> Save
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Document Viewer */}
       <DocumentViewer

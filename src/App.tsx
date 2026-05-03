@@ -21,6 +21,7 @@ import Partners from "@/pages/Partners";
 import Drive from "@/pages/Drive";
 import NotFound from "@/pages/NotFound";
 import OverflowGuard from "@/components/OverflowGuard";
+import OverflowReport from "@/components/OverflowReport";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ function AppRoutes() {
   return (
     <>
       <OverflowGuard />
+      <OverflowReport />
     <Routes>
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
