@@ -1,13 +1,15 @@
-import { useState, useRef, useCallback, DragEvent } from 'react';
+import { useState, useRef, useCallback, DragEvent, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload, FolderOpen, Grid3X3, List, Search, MoreVertical,
   FileText, Image as ImageIcon, File, Trash2, Eye, Download,
-  Plus, CloudUpload,
+  Plus, CloudUpload, Pencil, X, Check,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import DocumentViewer from '@/components/DocumentViewer';
+import { isLongSeedActive, LONG_FILENAMES } from '@/data/longSeeds';
+import { smartFilename, sanitizeBase, inferTypeFromName, typeBadgeFor } from '@/lib/smartFilename';
 
 interface DriveFile {
   id: string;
@@ -63,16 +65,40 @@ function processFiles(fileList: FileList): DriveFile[] {
 }
 
 export default function Drive() {
-  const [files, setFiles] = useState<DriveFile[]>(demoFiles);
+  const longSeed = useMemo(() => isLongSeedActive(), []);
+  const [files, setFiles] = useState<DriveFile[]>(() => {
+    if (!isLongSeedActive()) return demoFiles;
+    const extras: DriveFile[] = LONG_FILENAMES.map((name, idx) => ({
+      id: `long-${idx}`,
+      name,
+      type: inferTypeFromName(name),
+      size: `${(2 + idx * 0.7).toFixed(1)} MB`,
+      date: '2026-04-01',
+      folder: idx % 2 === 0 ? 'agreements' : 'visas',
+      url: '',
+    }));
+    return [...extras, ...demoFiles];
+  });
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [search, setSearch] = useState('');
   const [activeFolder, setActiveFolder] = useState('all');
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerFile, setViewerFile] = useState<{ name: string; type: 'pdf' | 'image'; url: string } | null>(null);
   const [contextMenu, setContextMenu] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<DriveFile | null>(null);
+  const [renameInput, setRenameInput] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (longSeed) toast.info('Long-seed mode active — stress-testing layout');
+  }, [longSeed]);
+
+  const renamePreview = useMemo(() => {
+    if (!renaming) return '';
+    return smartFilename({ base: renameInput || renaming.name, type: renaming.type });
+  }, [renameInput, renaming]);
 
   const filtered = files.filter(f => {
     const matchFolder = activeFolder === 'all' || f.folder === activeFolder;
@@ -141,6 +167,20 @@ export default function Drive() {
     setContextMenu(null);
     toast.success('File deleted');
   }, []);
+
+  const startRename = useCallback((f: DriveFile) => {
+    setRenaming(f);
+    setRenameInput(sanitizeBase(f.name));
+    setContextMenu(null);
+  }, []);
+
+  const commitRename = useCallback(() => {
+    if (!renaming) return;
+    const next = smartFilename({ base: renameInput || renaming.name, type: renaming.type });
+    setFiles(prev => prev.map(f => (f.id === renaming.id ? { ...f, name: next } : f)));
+    setRenaming(null);
+    toast.success('File renamed');
+  }, [renaming, renameInput]);
 
   return (
     <div
