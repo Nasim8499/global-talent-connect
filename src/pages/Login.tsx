@@ -204,8 +204,11 @@ export default function Login() {
           toast.error(error.message);
           return;
         }
+        const target = email.trim().toLowerCase();
+        setSentToEmail(target);
         setForgotSent(true);
-        setStatusMsg('Password reset email sent. Check your inbox.');
+        setResendCooldown(45);
+        setStatusMsg(`Password reset email sent to ${maskEmail(target)}. Check your inbox.`);
         toast.success('Reset email sent');
       }
     } finally {
