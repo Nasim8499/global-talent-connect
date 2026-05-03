@@ -20,11 +20,13 @@ import Owners from "@/pages/Owners";
 import Partners from "@/pages/Partners";
 import Drive from "@/pages/Drive";
 import NotFound from "@/pages/NotFound";
+import OverflowGuard from "@/components/OverflowGuard";
 
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <AppLayout>{children}</AppLayout>;
 }
@@ -33,6 +35,8 @@ function AppRoutes() {
   const { isAuthenticated } = useAuth();
 
   return (
+    <>
+      <OverflowGuard />
     <Routes>
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
@@ -50,6 +54,7 @@ function AppRoutes() {
       <Route path="/drive" element={<ProtectedRoute><Drive /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </>
   );
 }
 

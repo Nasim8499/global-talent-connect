@@ -146,8 +146,9 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
   .card-elevated {
-    @apply bg-card rounded-2xl border border-border/60 shadow-[0_1px_3px_rgba(0,0,0,0.3),0_6px_24px_rgba(0,0,0,0.25)];
+    @apply bg-card rounded-2xl border border-border/60 shadow-[0_1px_3px_rgba(0,0,0,0.3),0_6px_24px_rgba(0,0,0,0.25)] p-3 sm:p-4;
   }
+  .card-elevated.is-flush { @apply p-0; }
   .card-elevated:hover {
     @apply shadow-[0_2px_8px_rgba(0,0,0,0.4),0_12px_32px_rgba(0,0,0,0.35)] border-border;
   }

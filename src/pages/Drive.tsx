@@ -272,7 +272,7 @@ export default function Drive() {
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => openFile(file)}
-                      className="w-full card-elevated overflow-hidden text-left transition-shadow hover:shadow-lifted"
+                      className="w-full card-elevated is-flush overflow-hidden text-left transition-shadow hover:shadow-lifted"
                     >
                       <div className="aspect-[4/3] bg-muted/50 flex items-center justify-center overflow-hidden relative">
                         {file.type === 'image' && file.thumbnail ? (
