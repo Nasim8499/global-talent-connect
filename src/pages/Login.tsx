@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Globe, Loader2, AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Globe, Loader2, AlertCircle, ArrowLeft, MailCheck, RefreshCw } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,44 @@ export default function Login() {
   const [touched, setTouched] = useState<{ email?: boolean; password?: boolean; name?: boolean }>({});
   const [statusMsg, setStatusMsg] = useState<string>('');
   const [forgotSent, setForgotSent] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendLoading, setResendLoading] = useState(false);
+
+  // Cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
+
+  const maskEmail = (addr: string) => {
+    const [user, domain] = addr.split('@');
+    if (!user || !domain) return addr;
+    const u = user.length <= 2 ? user[0] + '•' : user[0] + '•'.repeat(Math.min(user.length - 2, 6)) + user[user.length - 1];
+    const [dName, ...rest] = domain.split('.');
+    const d = dName.length <= 2 ? dName[0] + '•' : dName[0] + '•'.repeat(Math.min(dName.length - 2, 4)) + dName[dName.length - 1];
+    return `${u}@${d}${rest.length ? '.' + rest.join('.') : ''}`;
+  };
+
+  const handleResend = async () => {
+    if (resendCooldown > 0 || resendLoading || !sentToEmail) return;
+    setResendLoading(true);
+    setStatusMsg('Resending reset link…');
+    const { error } = await supabase.auth.resetPasswordForEmail(sentToEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResendLoading(false);
+    if (error) {
+      setErrors({ form: error.message });
+      setStatusMsg(`Could not resend: ${error.message}`);
+      toast.error(error.message);
+      return;
+    }
+    setResendCooldown(45);
+    setStatusMsg(`Reset link resent to ${maskEmail(sentToEmail)}.`);
+    toast.success('Reset link resent');
+  };
 
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
   const submitRef = useRef<HTMLButtonElement | null>(null);
@@ -61,6 +99,8 @@ export default function Login() {
   useEffect(() => {
     setStatusMsg('');
     setForgotSent(false);
+    setSentToEmail('');
+    setResendCooldown(0);
     const t = setTimeout(() => firstFieldRef.current?.focus(), 80);
     return () => clearTimeout(t);
   }, [mode]);
@@ -164,8 +204,11 @@ export default function Login() {
           toast.error(error.message);
           return;
         }
+        const target = email.trim().toLowerCase();
+        setSentToEmail(target);
         setForgotSent(true);
-        setStatusMsg('Password reset email sent. Check your inbox.');
+        setResendCooldown(45);
+        setStatusMsg(`Password reset email sent to ${maskEmail(target)}. Check your inbox.`);
         toast.success('Reset email sent');
       }
     } finally {
@@ -250,6 +293,69 @@ export default function Login() {
 
           {/* Polite live region for status announcements */}
           <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">{statusMsg}</div>
+
+          {mode === 'forgot' && forgotSent ? (
+            <div className="space-y-4" aria-labelledby="forgot-confirm-title">
+              <div className="flex flex-col items-center text-center">
+                <motion.div
+                  initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 22 }}
+                  className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 mb-3"
+                >
+                  <MailCheck className="w-7 h-7 text-emerald-500" aria-hidden="true" />
+                </motion.div>
+                <h2 id="forgot-confirm-title" className="text-lg font-semibold text-foreground">Check your inbox</h2>
+                <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+                  If an account exists for this address, we sent a password reset link to:
+                </p>
+                <p className="mt-2 px-3 py-2 rounded-lg bg-muted/60 text-[13px] font-medium text-foreground break-all max-w-full">
+                  {maskEmail(sentToEmail)}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
+                  The link expires in 60 minutes. Check your spam folder if you don't see it.
+                </p>
+              </div>
+
+              <div role="alert" aria-live="assertive" className="min-h-[1rem]">
+                {errors.form && (
+                  <div className="flex items-start gap-2 rounded-xl bg-destructive/10 border border-destructive/30 p-2.5">
+                    <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+                    <p className="text-[12px] text-destructive leading-snug">{errors.form}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendCooldown > 0 || resendLoading}
+                  aria-describedby="resend-help"
+                  className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-navy-light font-semibold text-sm active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+                >
+                  {resendLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                  ) : resendCooldown > 0 ? (
+                    <>Resend in {resendCooldown}s</>
+                  ) : (
+                    <><RefreshCw className="w-4 h-4" aria-hidden="true" /> Resend reset link</>
+                  )}
+                </Button>
+                <p id="resend-help" className="text-[10px] text-muted-foreground text-center">
+                  {resendCooldown > 0
+                    ? `You can request another link in ${resendCooldown} second${resendCooldown === 1 ? '' : 's'}.`
+                    : 'Didn\u2019t get the email? Tap resend.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => switchMode('signin')}
+                  className="text-[12px] text-brand-blue hover:underline mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue rounded"
+                >
+                  Return to sign in
+                </button>
+              </div>
+            </div>
+          ) : (
 
           <form id="login-form" onSubmit={handleSubmit} noValidate className="space-y-3.5"
             aria-busy={loading} aria-describedby={errors.form ? 'form-error' : undefined}>
@@ -370,16 +476,6 @@ export default function Login() {
               </div>
             )}
 
-            {mode === 'forgot' && forgotSent && (
-              <div role="status" aria-live="polite"
-                className="flex items-start gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
-                <p className="text-[12px] text-emerald-700 dark:text-emerald-400 leading-snug">
-                  If an account exists for <strong>{email}</strong>, a reset link is on its way.
-                </p>
-              </div>
-            )}
-
             <Button
               ref={submitRef}
               type="submit"
@@ -392,6 +488,7 @@ export default function Login() {
               <span className="sr-only">{loading ? 'Submitting' : ''}</span>
             </Button>
           </form>
+          )}
 
           {mode !== 'forgot' && (
             <p className="text-center text-[11px] text-muted-foreground mt-4">
