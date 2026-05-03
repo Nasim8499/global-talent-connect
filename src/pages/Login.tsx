@@ -99,6 +99,8 @@ export default function Login() {
   useEffect(() => {
     setStatusMsg('');
     setForgotSent(false);
+    setSentToEmail('');
+    setResendCooldown(0);
     const t = setTimeout(() => firstFieldRef.current?.focus(), 80);
     return () => clearTimeout(t);
   }, [mode]);
