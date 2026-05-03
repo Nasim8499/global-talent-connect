@@ -20,6 +20,7 @@ import Owners from "@/pages/Owners";
 import Partners from "@/pages/Partners";
 import Drive from "@/pages/Drive";
 import NotFound from "@/pages/NotFound";
+import OverflowGuard from "@/components/OverflowGuard";
 
 const queryClient = new QueryClient();
 
