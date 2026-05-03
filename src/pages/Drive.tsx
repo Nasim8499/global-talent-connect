@@ -369,6 +369,9 @@ export default function Drive() {
                             <button onClick={() => { openFile(file); setContextMenu(null); }} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
                               <Eye className="w-3.5 h-3.5" /> Preview
                             </button>
+                            <button onClick={() => startRename(file)} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
+                              <Pencil className="w-3.5 h-3.5" /> Rename
+                            </button>
                             <button onClick={() => { setContextMenu(null); toast.info('Download started'); }} className="flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-muted w-full transition-colors">
                               <Download className="w-3.5 h-3.5" /> Download
                             </button>
@@ -398,26 +401,55 @@ export default function Drive() {
                     exit={{ opacity: 0, x: 8 }}
                     transition={{ delay: 0.02 * i, duration: 0.25 }}
                   >
-                    <motion.button
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => openFile(file)}
-                      className="w-full card-elevated p-3.5 flex items-center gap-3 text-left hover:shadow-lifted transition-shadow active:scale-[0.99]"
-                    >
-                      {file.type === 'image' && file.thumbnail ? (
-                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                          <img src={file.thumbnail} alt="" className="w-full h-full object-cover" />
-                        </div>
-                      ) : (
-                        <div className={`w-10 h-10 rounded-lg ${fileColors[file.type]} flex items-center justify-center flex-shrink-0`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{file.size} • {new Date(file.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                      </div>
+                    <div className="card-elevated p-2.5 sm:p-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
                       <button
-                        onClick={(e) => { e.stopPropagation(); deleteFile(file.id); }}
+                        onClick={() => openFile(file)}
+                        className="flex items-center gap-2.5 sm:gap-3 text-left flex-1 min-w-0 active:scale-[0.99] transition-transform"
+                      >
+                        {file.type === 'image' && file.thumbnail ? (
+                          <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0">
+                            <img src={file.thumbnail} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className={`w-11 h-11 rounded-lg ${fileColors[file.type]} flex items-center justify-center flex-shrink-0`}>
+                            <Icon className="w-5 h-5" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] sm:text-sm font-medium text-foreground leading-snug break-all line-clamp-2 sm:line-clamp-1" title={file.name}>
+                            {file.name}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                              {typeBadgeFor(file.name)}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">{file.size}</span>
+                            <span className="text-[10px] text-muted-foreground">• {new Date(file.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                          </div>
+                        </div>
+                      </button>
+                      <div className="flex items-center gap-1 self-end sm:self-auto flex-shrink-0">
+                        <button
+                          onClick={() => startRename(file)}
+                          aria-label="Rename"
+                          className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteFile(file.id)}
+                          aria-label="Delete"
+                          className="w-9 h-9 rounded-lg hover:bg-destructive/10 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
                         className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
