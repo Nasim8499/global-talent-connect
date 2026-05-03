@@ -476,16 +476,6 @@ export default function Login() {
               </div>
             )}
 
-            {mode === 'forgot' && forgotSent && (
-              <div role="status" aria-live="polite"
-                className="flex items-start gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
-                <p className="text-[12px] text-emerald-700 dark:text-emerald-400 leading-snug">
-                  If an account exists for <strong>{email}</strong>, a reset link is on its way.
-                </p>
-              </div>
-            )}
-
             <Button
               ref={submitRef}
               type="submit"
@@ -498,6 +488,7 @@ export default function Login() {
               <span className="sr-only">{loading ? 'Submitting' : ''}</span>
             </Button>
           </form>
+          )}
 
           {mode !== 'forgot' && (
             <p className="text-center text-[11px] text-muted-foreground mt-4">
