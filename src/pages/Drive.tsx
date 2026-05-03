@@ -450,16 +450,6 @@ export default function Drive() {
               })}
             </AnimatePresence>
           </div>
-                        className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </motion.button>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
         )}
 
         {filtered.length === 0 && (
