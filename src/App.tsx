@@ -54,6 +54,7 @@ function AppRoutes() {
       <Route path="/drive" element={<ProtectedRoute><Drive /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </>
   );
 }
 
