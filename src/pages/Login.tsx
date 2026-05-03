@@ -152,7 +152,7 @@ export default function Login() {
               <button
                 key={m}
                 type="button"
-                onClick={() => setMode(m)}
+                onClick={() => switchMode(m)}
                 className="relative z-10 py-2 text-xs font-semibold uppercase tracking-wider transition-colors"
               >
                 {mode === m && (
@@ -167,38 +167,91 @@ export default function Login() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
             <AnimatePresence mode="wait">
               {mode === 'signup' && (
                 <motion.div
                   key="name"
                   initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                 >
-                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Name</label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)}
-                    className="mt-1 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-brand-blue" />
+                  <label htmlFor="name" className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Name</label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => { setName(e.target.value); if (touched.name) validateField('name'); }}
+                    onBlur={() => { setTouched((t) => ({ ...t, name: true })); validateField('name'); }}
+                    aria-invalid={!!errors.name}
+                    aria-describedby={errors.name ? 'name-err' : undefined}
+                    className={`mt-1 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 ${errors.name ? 'ring-2 ring-destructive focus-visible:ring-destructive' : 'focus-visible:ring-brand-blue'}`}
+                  />
+                  {errors.name && (
+                    <p id="name-err" className="mt-1 text-[11px] text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {errors.name}
+                    </p>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
             <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Email</label>
-              <Input type="email" autoComplete="email" required
-                value={email} onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-brand-blue" />
+              <label htmlFor="email" className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Email</label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); if (touched.email) validateField('email'); }}
+                onBlur={() => { setTouched((t) => ({ ...t, email: true })); validateField('email'); }}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-err' : undefined}
+                className={`mt-1 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 ${errors.email ? 'ring-2 ring-destructive focus-visible:ring-destructive' : 'focus-visible:ring-brand-blue'}`}
+              />
+              {errors.email && (
+                <p id="email-err" className="mt-1 text-[11px] text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {errors.email}
+                </p>
+              )}
             </div>
             <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Password</label>
+              <label htmlFor="password" className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Password</label>
               <div className="relative mt-1">
-                <Input type={showPassword ? 'text' : 'password'} required minLength={6}
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                  value={password} onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 rounded-xl bg-muted/50 border-0 pr-12 focus-visible:ring-2 focus-visible:ring-brand-blue" />
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); if (touched.password) validateField('password'); }}
+                  onBlur={() => { setTouched((t) => ({ ...t, password: true })); validateField('password'); }}
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? 'password-err' : 'password-help'}
+                  className={`h-11 rounded-xl bg-muted/50 border-0 pr-12 focus-visible:ring-2 ${errors.password ? 'ring-2 ring-destructive focus-visible:ring-destructive' : 'focus-visible:ring-brand-blue'}`}
+                />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Toggle password"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {errors.password ? (
+                <p id="password-err" className="mt-1 text-[11px] text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {errors.password}
+                </p>
+              ) : mode === 'signup' && password.length > 0 ? (
+                <div id="password-help" className="mt-2">
+                  <div className="flex gap-1">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i < passwordScore ? strengthColor : 'bg-muted'}`} />
+                    ))}
+                  </div>
+                  <p className="mt-1 text-[10px] text-muted-foreground">Strength: <span className="text-foreground font-medium">{strengthLabel}</span></p>
+                </div>
+              ) : null}
             </div>
+
+            {errors.form && (
+              <div role="alert" className="flex items-start gap-2 rounded-xl bg-destructive/10 border border-destructive/30 p-2.5">
+                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <p className="text-[12px] text-destructive leading-snug">{errors.form}</p>
+              </div>
+            )}
 
             <Button type="submit" disabled={loading}
               className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-navy-light font-semibold text-sm transition-all duration-200 active:scale-[0.97] mt-1">
