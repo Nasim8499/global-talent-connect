@@ -51,7 +51,7 @@ export default function Projects() {
 
       {/* Filters */}
       <motion.div {...fade} transition={{ duration: 0.5, delay: 0.12 }} className="mt-4">
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 sm:-mx-4 px-3 sm:px-4 md:mx-0 md:px-0 scrollbar-hide">
           {projectFilters.map((f) => (
             <motion.button
               key={f.value}
