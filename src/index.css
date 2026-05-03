@@ -202,4 +202,68 @@
     width: 0 !important;
     height: 0 !important;
   }
+
+  /* ---- Tightened mobile system: tables, forms, modals, empty states ---- */
+  /* Tables: scroll-wrap on small screens, dense rows */
+  .table-tight {
+    @apply w-full text-[12px] sm:text-sm;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .table-tight th,
+  .table-tight td {
+    @apply px-2.5 sm:px-3 py-2 sm:py-2.5 align-top;
+    overflow-wrap: anywhere;
+  }
+  .table-tight th {
+    @apply text-[10px] sm:text-[11px] uppercase tracking-wide text-muted-foreground font-semibold;
+  }
+  .table-scroll {
+    @apply -mx-3 sm:mx-0 overflow-x-auto scrollbar-hide;
+  }
+
+  /* Forms: consistent label, control, helper text rhythm */
+  .form-label {
+    @apply block text-[11px] sm:text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1.5;
+  }
+  .form-control {
+    @apply h-11 rounded-xl bg-background border border-border/60 px-3 text-[13px] sm:text-sm w-full min-w-0;
+  }
+  .form-help {
+    @apply mt-1 text-[11px] text-muted-foreground;
+  }
+  .form-row {
+    @apply space-y-3 sm:space-y-4;
+  }
+
+  /* Modals: edge-to-edge sheet on mobile, centered card on desktop */
+  .modal-shell {
+    @apply fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/55 backdrop-blur-sm p-0 sm:p-3;
+  }
+  .modal-card {
+    @apply w-full sm:max-w-md bg-card rounded-t-2xl sm:rounded-2xl shadow-lifted border border-border/60 overflow-hidden max-h-[92vh] flex flex-col min-w-0;
+  }
+  .modal-header {
+    @apply flex items-center justify-between px-4 py-3 border-b border-border/60 text-sm font-semibold text-foreground;
+  }
+  .modal-body {
+    @apply p-4 space-y-3 overflow-y-auto min-w-0;
+  }
+  .modal-footer {
+    @apply flex gap-2 px-4 py-3 border-t border-border/60 bg-background/40;
+  }
+
+  /* Empty state: consistent spacing, never overflows */
+  .empty-state {
+    @apply text-center px-4 py-10 sm:py-14 max-w-sm mx-auto;
+  }
+  .empty-state-icon {
+    @apply w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground/30 mx-auto mb-3;
+  }
+  .empty-state-title {
+    @apply text-sm font-medium text-foreground;
+  }
+  .empty-state-desc {
+    @apply text-[12px] text-muted-foreground/70 mt-1 leading-relaxed;
+  }
 }
