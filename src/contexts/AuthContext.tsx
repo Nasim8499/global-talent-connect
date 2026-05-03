@@ -11,11 +11,13 @@ interface AuthContextType {
   isAuthenticated: boolean;
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: string | null }>;
+  enterDemo: (passport: string) => void;
   logout: () => Promise<void>;
 }
 
 const REMEMBER_KEY = 'visahobe.rememberMe';
 const TAB_FLAG = 'visahobe.tab';
+const DEMO_KEY = 'visahobe.demoPassport';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -25,6 +27,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [demoPassport, setDemoPassport] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem(DEMO_KEY) : null
+  );
 
   // Fetch role + profile (deferred to avoid deadlocks inside auth callback)
   const hydrateProfile = useCallback((uid: string) => {
@@ -39,15 +44,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Subscribe FIRST
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, sess) => {
       setSession(sess);
       setSupaUser(sess?.user ?? null);
       if (sess?.user) hydrateProfile(sess.user.id);
-      else { setRole(null); setDisplayName(''); }
+      else if (!localStorage.getItem(DEMO_KEY)) { setRole(null); setDisplayName(''); }
     });
-    // Then fetch existing session — enforce "Remember me" semantics:
-    // if the user opted out, sign out when a brand-new browser session starts.
     supabase.auth.getSession().then(async ({ data: { session: sess } }) => {
       const remember = localStorage.getItem(REMEMBER_KEY) !== 'false';
       const sameTabSession = sessionStorage.getItem(TAB_FLAG) === '1';
@@ -83,21 +85,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   }, []);
 
+  const enterDemo = useCallback((passport: string) => {
+    localStorage.setItem(DEMO_KEY, passport);
+    setDemoPassport(passport);
+    setRole('owner');
+    setDisplayName(`Passport ${passport}`);
+  }, []);
+
   const logout = useCallback(async () => {
+    localStorage.removeItem(DEMO_KEY);
+    setDemoPassport(null);
     await supabase.auth.signOut();
   }, []);
 
+  const isDemo = !!demoPassport;
   const userObj = supaUser ? {
     ...supaUser,
     name: displayName || supaUser.email?.split('@')[0] || 'User',
     role: role ?? 'viewer',
     company: 'VisaHOBe PTE. LTD.',
-  } : null;
+  } : isDemo ? ({
+    id: `demo-${demoPassport}`,
+    email: `passport-${demoPassport}@demo.visahobe`,
+    name: `Passport ${demoPassport}`,
+    role: role ?? 'owner',
+    company: 'VisaHOBe PTE. LTD.',
+  } as unknown as User & { name: string; role: UserRole; company: string }) : null;
 
   return (
     <AuthContext.Provider value={{
-      user: userObj, session, role, loading,
-      isAuthenticated: !!session, signIn, signUp, logout,
+      user: userObj, session, role: role ?? (isDemo ? 'owner' : null), loading,
+      isAuthenticated: !!session || isDemo, signIn, signUp, enterDemo, logout,
     }}>
       {children}
     </AuthContext.Provider>
