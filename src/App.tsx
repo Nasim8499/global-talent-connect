@@ -35,6 +35,8 @@ function AppRoutes() {
   const { isAuthenticated } = useAuth();
 
   return (
+    <>
+      <OverflowGuard />
     <Routes>
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
