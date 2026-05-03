@@ -60,7 +60,7 @@ export default function WorkerDetail() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="gradient-navy px-4 md:px-8 pt-4 pb-8">
+      <div className="gradient-navy px-3 sm:px-4 md:px-8 pt-4 pb-8">
         <Link to="/workers" className="inline-flex items-center gap-1.5 text-white/60 text-sm hover:text-white mb-4 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Workers
         </Link>
@@ -109,7 +109,7 @@ export default function WorkerDetail() {
 
       {/* Tabs */}
       <div className="sticky top-14 md:top-0 z-20 bg-background border-b border-border/50">
-        <div className="flex gap-0 overflow-x-auto px-4 md:px-8 scrollbar-hide">
+        <div className="flex gap-0 overflow-x-auto px-3 sm:px-4 md:px-8 scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -127,7 +127,7 @@ export default function WorkerDetail() {
       </div>
 
       {/* Content */}
-      <div className="px-4 md:px-8 py-6">
+      <div className="px-3 sm:px-3 sm:px-4 md:px-8 py-4 sm:py-6">
         <AnimatePresence mode="wait">
           {activeTab === 'Overview' && (
             <motion.div

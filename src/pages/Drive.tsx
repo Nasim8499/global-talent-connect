@@ -144,7 +144,7 @@ export default function Drive() {
 
   return (
     <div
-      className="px-4 md:px-8 py-6 max-w-4xl mx-auto relative min-h-[80vh]"
+      className="px-3 sm:px-4 md:px-8 py-4 sm:py-6 max-w-4xl mx-auto relative min-h-[80vh]"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -201,7 +201,7 @@ export default function Drive() {
 
       {/* Folder Tabs */}
       <motion.div {...fade} transition={{ duration: 0.5, delay: 0.05 }} className="mt-4">
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory touch-pan-x" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 sm:-mx-4 px-3 sm:px-4 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory touch-pan-x" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
           {folders.map((folder) => {
             const count = folder.id === 'all' ? files.length : files.filter(f => f.folder === folder.id).length;
             return (

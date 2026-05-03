@@ -52,7 +52,7 @@ export default function Admin() {
   );
 
   return (
-    <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
+    <div className="px-3 sm:px-4 md:px-8 py-4 sm:py-6 max-w-4xl mx-auto">
       <motion.div {...fade} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
         <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
         <p className="text-sm text-muted-foreground mt-0.5">System administration and controls</p>

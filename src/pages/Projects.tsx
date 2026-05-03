@@ -25,7 +25,7 @@ export default function Projects() {
   const totalProfit = demoProjects.reduce((s, p) => s + (p.revenue - p.expenses), 0);
 
   return (
-    <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
+    <div className="px-3 sm:px-4 md:px-8 py-4 sm:py-6 max-w-4xl mx-auto">
       <motion.div {...fade} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
         <h1 className="text-xl font-bold text-foreground">Projects & Batches</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{demoProjects.length} active batches</p>
@@ -51,7 +51,7 @@ export default function Projects() {
 
       {/* Filters */}
       <motion.div {...fade} transition={{ duration: 0.5, delay: 0.12 }} className="mt-4">
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 sm:-mx-4 px-3 sm:px-4 md:mx-0 md:px-0 scrollbar-hide">
           {projectFilters.map((f) => (
             <motion.button
               key={f.value}

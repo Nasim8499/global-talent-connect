@@ -71,7 +71,7 @@ export default function Workers() {
   const activeCountry = countries.find(c => c.code === countryFilter);
 
   return (
-    <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
+    <div className="px-3 sm:px-4 md:px-8 py-4 sm:py-6 max-w-4xl mx-auto">
       <motion.div {...fade} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Workers</h1>
@@ -179,7 +179,7 @@ export default function Workers() {
 
       {/* Filters */}
       <motion.div {...fade} transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }} className="mt-3">
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 sm:-mx-4 px-3 sm:px-4 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory" style={{ WebkitOverflowScrolling: 'touch' }}>
           {filters.map((f) => {
             const count = f.value === 'all' ? demoWorkers.length : demoWorkers.filter(w => w.status === f.value).length;
             return (

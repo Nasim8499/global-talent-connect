@@ -11,7 +11,7 @@ export default function Owners() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="gradient-navy px-4 md:px-8 pt-6 pb-10">
+      <div className="gradient-navy px-3 sm:px-3 sm:px-4 md:px-8 pt-5 sm:pt-6 pb-8 sm:pb-10">
         <motion.div {...fade} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="flex items-center gap-4">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
@@ -55,7 +55,7 @@ export default function Owners() {
         </motion.div>
       </div>
 
-      <div className="px-4 md:px-8 -mt-4 space-y-4">
+      <div className="px-3 sm:px-4 md:px-8 -mt-4 space-y-4">
         {/* Info Card */}
         <motion.div {...fade} transition={{ duration: 0.5, delay: 0.1 }} className="card-elevated p-5">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Personal Details</h3>
