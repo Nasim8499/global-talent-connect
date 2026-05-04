@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { X, Download, Printer, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, Maximize2, Sun, LayoutGrid, Save } from 'lucide-react';
+import { X, Download, Printer, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, Maximize2, Sun, LayoutGrid, Save, Share2 } from 'lucide-react';
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -202,19 +202,16 @@ export default function PdfPreviewModal({ open, onClose, title, pages, onSaveDra
     preloadIndexes.forEach(i => { if (!cache.has(i)) cache.set(i, pages[i]); });
   }, [preloadIndexes, cache, pages]);
 
-  const handleDownload = useCallback(async () => {
-    setDownloading(true);
+  const buildPdf = useCallback(async (): Promise<jsPDF> => {
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const a4W = 210;
+    const a4H = 297;
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    document.body.appendChild(container);
     try {
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const a4W = 210;
-      const a4H = 297;
-
-      const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.left = '-9999px';
-      container.style.top = '0';
-      document.body.appendChild(container);
-
       for (let i = 0; i < pages.length; i++) {
         if (i > 0) pdf.addPage();
         const allPageEls = pagesContainerRef.current?.querySelectorAll('[data-pdf-page]');
@@ -235,19 +232,93 @@ export default function PdfPreviewModal({ open, onClose, title, pages, onSaveDra
           container.removeChild(clone);
         }
       }
+    } finally {
       document.body.removeChild(container);
-      const safeName = title.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
-      pdf.save(`${safeName}.pdf`);
-      toast.success('PDF downloaded successfully');
+    }
+    return pdf;
+  }, [pages]);
+
+  const safeFileName = useCallback(() => {
+    const safe = title.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
+    return `${safe || 'agreement'}.pdf`;
+  }, [title]);
+
+  const handleDownload = useCallback(async () => {
+    setDownloading(true);
+    try {
+      const pdf = await buildPdf();
+      pdf.save(safeFileName());
+      toast.success('PDF downloaded');
     } catch (err) {
       console.error('PDF download failed:', err);
       toast.error('Failed to download PDF');
     } finally {
       setDownloading(false);
     }
-  }, [pages, title]);
+  }, [buildPdf, safeFileName]);
 
-  const handlePrint = useCallback(() => window.print(), []);
+  const [printing, setPrinting] = useState(false);
+  const handlePrint = useCallback(async () => {
+    setPrinting(true);
+    try {
+      const pdf = await buildPdf();
+      const blob = pdf.output('blob');
+      const url = URL.createObjectURL(blob);
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0'; iframe.style.bottom = '0';
+      iframe.style.width = '0'; iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      iframe.onload = () => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch {
+          window.open(url, '_blank');
+        }
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+          URL.revokeObjectURL(url);
+        }, 60_000);
+      };
+      toast.success('Opening print dialog…');
+    } catch (err) {
+      console.error('Print failed:', err);
+      toast.error('Failed to print');
+    } finally {
+      setPrinting(false);
+    }
+  }, [buildPdf]);
+
+  const [sharing, setSharing] = useState(false);
+  const handleShare = useCallback(async () => {
+    setSharing(true);
+    try {
+      const pdf = await buildPdf();
+      const blob = pdf.output('blob');
+      const file = new File([blob], safeFileName(), { type: 'application/pdf' });
+      const navAny = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (navAny.canShare && navAny.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title, text: title });
+        toast.success('Shared');
+      } else {
+        // Fallback: download + copy a URL hint
+        pdf.save(safeFileName());
+        try { await navigator.clipboard.writeText(title); } catch { /* ignore */ }
+        toast.success('Sharing not supported — file downloaded instead');
+      }
+    } catch (err) {
+      const aborted = (err as DOMException)?.name === 'AbortError';
+      if (!aborted) {
+        console.error('Share failed:', err);
+        toast.error('Failed to share');
+      }
+    } finally {
+      setSharing(false);
+    }
+  }, [buildPdf, safeFileName, title]);
 
   if (!open) return null;
 
