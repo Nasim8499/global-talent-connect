@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { X, Download, Printer, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, Maximize2, Sun, LayoutGrid } from 'lucide-react';
+import { X, Download, Printer, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, Maximize2, Sun, LayoutGrid, Save } from 'lucide-react';
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -11,6 +11,8 @@ interface PdfPreviewModalProps {
   title: string;
   pages: React.ReactNode[];
   onDownload?: () => void;
+  onSaveDraft?: () => void;
+  draftBadge?: string; // e.g. "v3 · 04 May 14:22"
 }
 
 const MIN_ZOOM = 0.5;
@@ -25,7 +27,7 @@ function getCacheFor(title: string) {
   return m;
 }
 
-export default function PdfPreviewModal({ open, onClose, title, pages }: PdfPreviewModalProps) {
+export default function PdfPreviewModal({ open, onClose, title, pages, onSaveDraft, draftBadge }: PdfPreviewModalProps) {
   const storageKey = `${STORAGE_PREFIX}${title}`;
   const [currentPage, setCurrentPage] = useState(0);
   const [downloading, setDownloading] = useState(false);
