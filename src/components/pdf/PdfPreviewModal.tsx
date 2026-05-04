@@ -390,15 +390,18 @@ export default function PdfPreviewModal({ open, onClose, title, pages, onSaveDra
             >
               <Sun className="w-4 h-4" />
             </button>
-            <button onClick={handlePrint} aria-label="Print" className={`hidden sm:inline-flex p-2 rounded-lg transition-colors active:scale-95 ${hcBtn}`}>
-              <Printer className="w-4 h-4" />
+            <button onClick={handlePrint} disabled={printing} aria-label="Print" className={`hidden sm:inline-flex p-2 rounded-lg transition-colors active:scale-95 disabled:opacity-50 ${hcBtn}`}>
+              {printing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+            </button>
+            <button onClick={handleShare} disabled={sharing} aria-label="Share" className={`hidden sm:inline-flex p-2 rounded-lg transition-colors active:scale-95 disabled:opacity-50 ${hcBtn}`}>
+              {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
             </button>
             {onSaveDraft && (
               <button onClick={onSaveDraft} aria-label="Save as draft" title="Save as draft" className={`p-2 rounded-lg transition-colors active:scale-95 ${hcBtn}`}>
                 <Save className="w-4 h-4" />
               </button>
             )}
-            <button onClick={handleDownload} disabled={downloading} aria-label="Download PDF" className={`p-2 rounded-lg transition-colors active:scale-95 disabled:opacity-50 ${hcBtn}`}>
+            <button onClick={handleDownload} disabled={downloading} aria-label="Download PDF" className={`hidden sm:inline-flex p-2 rounded-lg transition-colors active:scale-95 disabled:opacity-50 ${hcBtn}`}>
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             </button>
           </div>
