@@ -13,6 +13,8 @@ interface PdfPreviewModalProps {
   onDownload?: () => void;
   onSaveDraft?: () => void;
   draftBadge?: string; // e.g. "v3 · 04 May 14:22"
+  /** Stable key for persisting per-agreement view state (zoom, page, contrast). Falls back to title. */
+  persistKey?: string;
 }
 
 const MIN_ZOOM = 0.5;
@@ -27,8 +29,8 @@ function getCacheFor(title: string) {
   return m;
 }
 
-export default function PdfPreviewModal({ open, onClose, title, pages, onSaveDraft, draftBadge }: PdfPreviewModalProps) {
-  const storageKey = `${STORAGE_PREFIX}${title}`;
+export default function PdfPreviewModal({ open, onClose, title, pages, onSaveDraft, draftBadge, persistKey }: PdfPreviewModalProps) {
+  const storageKey = `${STORAGE_PREFIX}${persistKey ?? title}`;
   const [currentPage, setCurrentPage] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [pageReady, setPageReady] = useState(false);
