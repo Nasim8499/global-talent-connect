@@ -586,6 +586,37 @@ export default function PdfPreviewModal({ open, onClose, title, pages, onSaveDra
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
+
+          {/* Mobile one-tap action bar (hidden on sm+ since header has the buttons) */}
+          <div className="sm:hidden mt-2.5 grid grid-cols-3 gap-2">
+            <button
+              onClick={handlePrint}
+              disabled={printing}
+              aria-label="Print PDF"
+              className={`h-11 rounded-xl flex items-center justify-center gap-1.5 text-xs font-medium active:scale-[0.97] transition-all disabled:opacity-50 ${hc ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-muted hover:bg-muted/70 text-foreground'}`}
+            >
+              {printing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+              <span>Print</span>
+            </button>
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              aria-label="Share PDF"
+              className={`h-11 rounded-xl flex items-center justify-center gap-1.5 text-xs font-medium active:scale-[0.97] transition-all disabled:opacity-50 ${hc ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-muted hover:bg-muted/70 text-foreground'}`}
+            >
+              {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+              <span>Share</span>
+            </button>
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              aria-label="Download PDF"
+              className={`h-11 rounded-xl flex items-center justify-center gap-1.5 text-xs font-semibold active:scale-[0.97] transition-all disabled:opacity-50 ${hc ? 'bg-white text-black hover:bg-white/90' : 'bg-primary text-primary-foreground hover:opacity-90'}`}
+            >
+              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              <span>Save</span>
+            </button>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
