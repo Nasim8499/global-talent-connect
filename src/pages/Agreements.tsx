@@ -351,6 +351,7 @@ export default function Agreements() {
         pages={previewPages}
         onSaveDraft={handleSaveDraft}
         draftBadge={draftBadge}
+        persistKey={activeDraft?.key ?? pendingDraftMeta?.key}
       />
     </div>
   );
