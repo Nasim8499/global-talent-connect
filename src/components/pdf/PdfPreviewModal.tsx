@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { X, Download, Printer, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, Maximize2, Sun, LayoutGrid } from 'lucide-react';
+import { X, Download, Printer, ChevronLeft, ChevronRight, Loader2, ZoomIn, ZoomOut, Maximize2, Sun, LayoutGrid, Save } from 'lucide-react';
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -11,6 +11,8 @@ interface PdfPreviewModalProps {
   title: string;
   pages: React.ReactNode[];
   onDownload?: () => void;
+  onSaveDraft?: () => void;
+  draftBadge?: string; // e.g. "v3 · 04 May 14:22"
 }
 
 const MIN_ZOOM = 0.5;
@@ -25,7 +27,7 @@ function getCacheFor(title: string) {
   return m;
 }
 
-export default function PdfPreviewModal({ open, onClose, title, pages }: PdfPreviewModalProps) {
+export default function PdfPreviewModal({ open, onClose, title, pages, onSaveDraft, draftBadge }: PdfPreviewModalProps) {
   const storageKey = `${STORAGE_PREFIX}${title}`;
   const [currentPage, setCurrentPage] = useState(0);
   const [downloading, setDownloading] = useState(false);
@@ -279,6 +281,7 @@ export default function PdfPreviewModal({ open, onClose, title, pages }: PdfPrev
             <p className="text-sm font-semibold truncate">{title}</p>
             <p className={`text-[10px] ${hcSubtle}`}>
               Page {currentPage + 1} of {pages.length} · {Math.round(effectiveScale * 100)}%
+              {draftBadge ? <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-brand-gold/15 text-brand-gold font-medium">{draftBadge}</span> : null}
             </p>
           </div>
           <div className="flex gap-0.5 flex-shrink-0 items-center">
@@ -319,6 +322,11 @@ export default function PdfPreviewModal({ open, onClose, title, pages }: PdfPrev
             <button onClick={handlePrint} aria-label="Print" className={`hidden sm:inline-flex p-2 rounded-lg transition-colors active:scale-95 ${hcBtn}`}>
               <Printer className="w-4 h-4" />
             </button>
+            {onSaveDraft && (
+              <button onClick={onSaveDraft} aria-label="Save as draft" title="Save as draft" className={`p-2 rounded-lg transition-colors active:scale-95 ${hcBtn}`}>
+                <Save className="w-4 h-4" />
+              </button>
+            )}
             <button onClick={handleDownload} disabled={downloading} aria-label="Download PDF" className={`p-2 rounded-lg transition-colors active:scale-95 disabled:opacity-50 ${hcBtn}`}>
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             </button>

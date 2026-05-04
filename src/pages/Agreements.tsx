@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Download, Eye, Search, Filter } from 'lucide-react';
+import { FileText, Download, Eye, Search, History, Trash2, RefreshCw, Pencil } from 'lucide-react';
+import { toast } from 'sonner';
 import { demoAgreements, demoWorkers, demoProjects, demoPayments, statusLabels } from '@/data/demo';
 import PdfPreviewModal from '@/components/pdf/PdfPreviewModal';
 import {
@@ -11,6 +12,18 @@ import {
 } from '@/components/pdf/templates';
 import SwipeableCards, { SwipeCard } from '@/components/SwipeableCards';
 import { Input } from '@/components/ui/input';
+import {
+  type AgreementDraft,
+  type DraftKind,
+  listDrafts,
+  saveDraft,
+  regenerateDraft,
+  updateDraftNotes,
+  deleteDraft,
+  getDraft,
+  formatTimestamp,
+  nextVersionFor,
+} from '@/lib/agreementDrafts';
 import type { Agreement } from '@/types';
 
 const typeColors: Record<string, string> = {
@@ -18,6 +31,7 @@ const typeColors: Record<string, string> = {
   worker: 'bg-brand-blue/10 text-brand-blue',
   employer: 'bg-primary/10 text-primary',
   service: 'bg-brand-green/10 text-brand-green',
+  receipt: 'bg-brand-green/10 text-brand-green',
 };
 
 const fade = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
@@ -48,6 +62,11 @@ function getPagesForAgreement(agr: Agreement): React.ReactNode[] {
   }
 }
 
+function getPagesForKind(kind: DraftKind): React.ReactNode[] {
+  if (kind === 'service') return EmployerContractPages();
+  return getPagesForTemplate(kind as TemplateType);
+}
+
 const templates: { type: TemplateType; label: string; desc: string }[] = [
   { type: 'partnership', label: 'Partnership', desc: 'Owner & partner terms' },
   { type: 'worker', label: 'Worker', desc: 'Deployment agreement' },
@@ -59,30 +78,93 @@ export default function Agreements() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTitle, setPreviewTitle] = useState('');
   const [previewPages, setPreviewPages] = useState<React.ReactNode[]>([]);
+  const [activeDraft, setActiveDraft] = useState<AgreementDraft | null>(null);
+  const [pendingDraftMeta, setPendingDraftMeta] = useState<{ key: string; kind: DraftKind; title: string } | null>(null);
   const [search, setSearch] = useState('');
+  const [drafts, setDrafts] = useState<AgreementDraft[]>([]);
+  const [editing, setEditing] = useState<AgreementDraft | null>(null);
+  const [editNotes, setEditNotes] = useState('');
+
+  const refreshDrafts = useCallback(() => setDrafts(listDrafts()), []);
+
+  useEffect(() => {
+    refreshDrafts();
+    const h = () => refreshDrafts();
+    window.addEventListener('agreement-drafts:changed', h);
+    return () => window.removeEventListener('agreement-drafts:changed', h);
+  }, [refreshDrafts]);
 
   const openTemplate = (type: TemplateType) => {
     const t = templates.find(t => t.type === type)!;
+    const key = `tpl:${type}`;
+    setActiveDraft(null);
+    setPendingDraftMeta({ key, kind: type, title: `${t.label} Agreement` });
     setPreviewTitle(`${t.label} Agreement — Preview`);
     setPreviewPages(getPagesForTemplate(type));
     setPreviewOpen(true);
   };
 
   const openAgreement = (agr: Agreement) => {
+    const kind: DraftKind = agr.type;
+    setActiveDraft(null);
+    setPendingDraftMeta({ key: `agr:${agr.id}`, kind, title: agr.title });
     setPreviewTitle(agr.title);
     setPreviewPages(getPagesForAgreement(agr));
     setPreviewOpen(true);
   };
 
+  const openDraft = (d: AgreementDraft) => {
+    setActiveDraft(d);
+    setPendingDraftMeta(null);
+    setPreviewTitle(`${d.title} — v${d.version}`);
+    setPreviewPages(getPagesForKind(d.kind));
+    setPreviewOpen(true);
+  };
+
+  const handleSaveDraft = useCallback(() => {
+    if (activeDraft) {
+      const fresh = regenerateDraft(activeDraft.id);
+      if (fresh) {
+        setActiveDraft(fresh);
+        setPreviewTitle(`${fresh.title} — v${fresh.version}`);
+        toast.success(`Saved as v${fresh.version}`);
+      }
+      return;
+    }
+    if (pendingDraftMeta) {
+      const draft = saveDraft(pendingDraftMeta);
+      setActiveDraft(draft);
+      setPreviewTitle(`${draft.title} — v${draft.version}`);
+      toast.success(`Draft saved (v${draft.version})`);
+    }
+  }, [activeDraft, pendingDraftMeta]);
+
+  const draftBadge = activeDraft
+    ? `v${activeDraft.version} · ${formatTimestamp(activeDraft.updatedAt)}`
+    : pendingDraftMeta
+      ? `next v${nextVersionFor(pendingDraftMeta.key)}`
+      : undefined;
+
   const filteredAgreements = demoAgreements.filter(a =>
     `${a.title} ${a.referenceNo} ${a.parties.join(' ')}`.toLowerCase().includes(search.toLowerCase())
   );
+
+  const startEditNotes = (d: AgreementDraft) => {
+    setEditing(d);
+    setEditNotes(d.notes);
+  };
+  const commitEditNotes = () => {
+    if (!editing) return;
+    updateDraftNotes(editing.id, editNotes);
+    toast.success('Draft notes updated');
+    setEditing(null);
+  };
 
   return (
     <div className="px-3 sm:px-4 md:px-8 py-4 sm:py-6 max-w-4xl mx-auto">
       <motion.div {...fade} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
         <h1 className="text-xl font-bold text-foreground">Agreements</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{demoAgreements.length} agreements on file</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{demoAgreements.length} agreements on file · {drafts.length} draft{drafts.length === 1 ? '' : 's'}</p>
       </motion.div>
 
       {/* Template Cards — Swipeable */}
@@ -109,6 +191,90 @@ export default function Agreements() {
           ))}
         </SwipeableCards>
       </motion.div>
+
+      {/* Drafts */}
+      {drafts.length > 0 && (
+        <motion.div {...fade} transition={{ duration: 0.5, delay: 0.15 }} className="mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <History className="w-3.5 h-3.5" /> Saved Drafts
+            </h2>
+            <span className="text-[10px] text-muted-foreground">{drafts.length} total</span>
+          </div>
+          <div className="space-y-2">
+            <AnimatePresence mode="popLayout">
+              {drafts.map((d, i) => (
+                <motion.div
+                  key={d.id}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.25, delay: 0.02 * i }}
+                  className="card-elevated p-3"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-9 h-9 rounded-xl ${typeColors[d.kind] || typeColors.employer} flex items-center justify-center flex-shrink-0`}>
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-semibold text-foreground truncate">{d.title}</h3>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-brand-gold/15 text-brand-gold font-medium">v{d.version}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Updated {formatTimestamp(d.updatedAt)} · Created {formatTimestamp(d.createdAt)}
+                      </p>
+                      {editing?.id === d.id ? (
+                        <div className="mt-2 space-y-1.5">
+                          <textarea
+                            value={editNotes}
+                            onChange={(e) => setEditNotes(e.target.value)}
+                            rows={2}
+                            placeholder="Draft notes…"
+                            className="w-full text-xs rounded-md bg-card border border-border/50 px-2 py-1.5 outline-none focus:ring-2 focus:ring-primary/40"
+                          />
+                          <div className="flex gap-1.5">
+                            <button onClick={commitEditNotes} className="text-[11px] px-2.5 py-1 rounded-md bg-primary text-primary-foreground hover:opacity-90">Save</button>
+                            <button onClick={() => setEditing(null)} className="text-[11px] px-2.5 py-1 rounded-md bg-muted text-foreground hover:bg-muted/80">Cancel</button>
+                          </div>
+                        </div>
+                      ) : d.notes ? (
+                        <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{d.notes}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button onClick={() => openDraft(d)} title="Reopen / re-generate" className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80">
+                        <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      <button onClick={() => startEditNotes(d)} title="Edit notes" className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80">
+                        <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          const fresh = regenerateDraft(d.id);
+                          if (fresh) toast.success(`Re-generated as v${fresh.version}`);
+                        }}
+                        title="Re-generate as new version"
+                        className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      <button
+                        onClick={() => { deleteDraft(d.id); toast.success('Draft deleted'); }}
+                        title="Delete draft"
+                        className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center hover:bg-destructive/20"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      )}
 
       {/* Search */}
       <motion.div {...fade} transition={{ duration: 0.5, delay: 0.18 }} className="mt-6">
@@ -183,6 +349,8 @@ export default function Agreements() {
         onClose={() => setPreviewOpen(false)}
         title={previewTitle}
         pages={previewPages}
+        onSaveDraft={handleSaveDraft}
+        draftBadge={draftBadge}
       />
     </div>
   );
