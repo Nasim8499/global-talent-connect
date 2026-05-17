@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import Login from "@/pages/Login";
+import Landing from "@/pages/Landing";
+import CountryDetail from "@/pages/CountryDetail";
 import Index from "@/pages/Index";
 import Workers from "@/pages/Workers";
 import WorkerDetail from "@/pages/WorkerDetail";
@@ -41,6 +43,8 @@ function AppRoutes() {
       <OverflowGuard />
       <OverflowReport />
     <Routes>
+      <Route path="/landing" element={<Landing />} />
+      <Route path="/visa/:slug" element={<CountryDetail />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/workers" element={<ProtectedRoute><Workers /></ProtectedRoute>} />
