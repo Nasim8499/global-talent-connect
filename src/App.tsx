@@ -43,6 +43,8 @@ function AppRoutes() {
       <OverflowGuard />
       <OverflowReport />
     <Routes>
+      <Route path="/landing" element={<Landing />} />
+      <Route path="/visa/:slug" element={<CountryDetail />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/workers" element={<ProtectedRoute><Workers /></ProtectedRoute>} />
