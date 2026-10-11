@@ -23,6 +23,7 @@ import Partners from "@/pages/Partners";
 import Drive from "@/pages/Drive";
 import DevOverflow from "@/pages/DevOverflow";
 import NotFound from "@/pages/NotFound";
+import OAuthConsent from "@/pages/OAuthConsent";
 import OverflowGuard from "@/components/OverflowGuard";
 import OverflowReport from "@/components/OverflowReport";
 
@@ -44,6 +45,7 @@ function AppRoutes() {
       <OverflowReport />
     <Routes>
       <Route path="/landing" element={<Landing />} />
+      <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
       <Route path="/visa/:slug" element={<CountryDetail />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
